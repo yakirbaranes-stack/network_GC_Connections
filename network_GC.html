@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glory of the Confessors — Character Network</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#1a1612; font-family:'Palatino Linotype','Book Antiqua',Palatino,serif; overflow:hidden; width:100vw; height:100vh; }
+  #container { width:100%; height:100%; position:relative; }
+  svg { display:block; }
+
+  #title { position:absolute; top:12px; left:0; right:0; text-align:center; z-index:10; pointer-events:none; }
+  #title h1 { color:#e8dcc8; font-size:22px; font-weight:400; letter-spacing:3px; text-transform:uppercase; margin:0; text-shadow:0 2px 12px rgba(0,0,0,.6); }
+  #title p { color:#8a7e6a; font-size:11px; letter-spacing:1.5px; margin:3px 0 0; }
+
+  #legend { position:absolute; bottom:14px; left:14px; z-index:10; background:rgba(26,22,18,.93); border:1px solid #3a3228; border-radius:8px; padding:12px 16px; backdrop-filter:blur(8px); }
+  #legend .leg-title { color:#8a7e6a; font-size:9px; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:8px; }
+  #legend .leg-cols { display:flex; gap:18px; }
+  #legend .leg-sub { color:#7a6e5a; font-size:8px; letter-spacing:1px; text-transform:uppercase; margin-bottom:5px; }
+  #legend .leg-row { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
+  #legend .leg-row span { color:#c8bca8; font-size:11px; }
+  .leg-dot { width:12px; height:12px; border-radius:50%; }
+  .leg-line { height:3px; border-radius:2px; width:20px; }
+  #legend .leg-hint { color:#5a4e3a; font-size:9px; margin-top:8px; font-style:italic; }
+
+  #tooltip { position:absolute; background:rgba(30,26,22,.96); border:1px solid #5a4e3a; border-radius:8px; padding:13px 16px; max-width:290px; z-index:100; pointer-events:none; backdrop-filter:blur(12px); box-shadow:0 8px 32px rgba(0,0,0,.5); display:none; font-family:'Palatino Linotype','Book Antiqua',Palatino,serif; }
+  #tooltip .tip-name { font-size:15px; font-weight:700; margin-bottom:3px; }
+  #tooltip .tip-title { font-size:11px; color:#a89878; font-style:italic; margin-bottom:2px; }
+  #tooltip .tip-meta { font-size:10px; color:#6a5e4a; margin-bottom:7px; }
+  #tooltip .tip-desc { font-size:11px; color:#c8bca8; line-height:1.5; }
+  #tooltip .tip-ch { font-size:10px; color:#6a5e4a; margin-top:7px; }
+  #tooltip .tip-type-row { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+  #tooltip .tip-type-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; }
+  #tooltip .tip-link-names { font-size:12px; color:#c8bca8; font-weight:600; margin-bottom:5px; }
+  #tooltip .tip-link-desc { font-size:11px; color:#a89878; line-height:1.5; }
+</style>
+</head>
+<body>
+<div id="container">
+  <div id="title">
+    <h1>Glory of the Confessors</h1>
+    <p>Character Network &middot; Gregory of Tours &middot; Geographic Layout of Gaul</p>
+  </div>
+  <div id="legend">
+    <div class="leg-title">Legend</div>
+    <div class="leg-cols">
+      <div>
+        <div class="leg-sub">Nodes</div>
+        <div class="leg-row"><div class="leg-dot" style="background:#D4A843;border:1.5px solid #f0d890"></div><span>Saint</span></div>
+        <div class="leg-row"><div class="leg-dot" style="background:#6AADCF;border:1.5px solid #9dd4ea"></div><span>Not Saint</span></div>
+      </div>
+      <div>
+        <div class="leg-sub">Connections</div>
+        <div class="leg-row"><div class="leg-line" style="background:#C47A2B"></div><span>Family/Ecclesiastical</span></div>
+        <div class="leg-row"><div class="leg-line" style="background:#B83B5E"></div><span>Miracle</span></div>
+        <div class="leg-row"><div class="leg-line" style="background:#3B7DD8"></div><span>Translation</span></div>
+      </div>
+    </div>
+    <div class="leg-hint">Scroll to zoom · Drag to pan · Click node to pin connections · Click background to unpin</div>
+  </div>
+  <svg id="graph"></svg>
+  <div id="tooltip"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const CHARACTERS = [
+  { id:"GCC-01",name:"Hilary",title:"Bishop of Poitiers",saint:true,chapters:"2, 5, 52, 53, 59",location:"Poitiers",desc:"An exile who returned to Poitiers; his relics convert people and protect against storms." },
+  { id:"GCC-02",name:"Eusebius",title:"Bishop of Vercelli",saint:true,chapters:"3",location:"Vercelli",desc:"A supporter of Hilary; his relics protect houses from fire and cure the possessed." },
+  { id:"GCC-03",name:"Martin",title:"Bishop of Tours",saint:true,chapters:"4-11, 15, 20, 22, 38, 45, 56, 58, 79, 94, 101, 102, 108",location:"Tours",desc:"The central figure of Gallic hagiography; his power animates stones, trees, and oil." },
+  { id:"GCC-04",name:"Catianus",title:"First Bishop of Tours",saint:true,chapters:"4, 29",location:"Tours",desc:"Sent from Rome; Martin famously requested a blessing from his voice within the tomb." },
+  { id:"GCC-05",name:"Vitalina",title:"Nun / Virgin",saint:true,chapters:"5",location:"Artonne",desc:"A virgin whose entry to heaven was briefly delayed for washing her face on Good Friday." },
+  { id:"GCC-06",name:"Aredius",title:"Priest",saint:true,chapters:"9, 10, 102",location:"Limoges",desc:"A holy man of highest goodness who shared accounts of Martin's miracles with Gregory." },
+  { id:"GCC-07",name:"Venantius",title:"Abbot",saint:true,chapters:"15",location:"Tours",desc:"A man of outstanding holiness whose tomb provides a cure for chilling fevers." },
+  { id:"GCC-08",name:"Papula",title:"Abbot / Ascetic",saint:true,chapters:"16",location:"Tours",desc:"A woman who lived disguised as a man in a monastery for 30 years to serve God." },
+  { id:"GCC-09",name:"Benignus",title:"Bishop",saint:true,chapters:"17",location:"Tours",desc:"A foreigner who punished a man for stealing his tomb lid to cover a common grave." },
+  { id:"GCC-10",name:"Maura & Britta",title:"Virgins",saint:true,chapters:"18",location:"Tours",desc:"Two sisters who appeared to Bishop Eufronius in a vision to demand their oratory be blessed." },
+  { id:"GCC-11",name:"Eufronius",title:"Bishop of Tours",saint:true,chapters:"9, 18, 19, 20",location:"Tours",desc:"Gregory's predecessor; he predicted the death of King Charibert through divine insight." },
+  { id:"GCC-12",name:"Saturninus",title:"Bishop / Martyr",saint:true,chapters:"20",location:"Toulouse",desc:"A martyr whose relics were placed in Gregory's oratory, causing a flash of divine light." },
+  { id:"GCC-13",name:"Julian",title:"Martyr",saint:true,chapters:"20",location:"Clermont",desc:"A martyr whose relics, along with Martin's, were transferred to Gregory's oratory." },
+  { id:"GCC-14",name:"Illidius",title:"Bishop / Confessor",saint:true,chapters:"20, 34, 35",location:"Clermont",desc:"A holy man whose relics were used in the consecration of Gregory's oratory." },
+  { id:"GCC-15",name:"Sollemnis",title:"Confessor",saint:true,chapters:"21",location:"Luynes",desc:"Buried in a hidden crypt; his tomb was revealed by possessed men clapping their hands." },
+  { id:"GCC-16",name:"Maximus",title:"Abbot",saint:true,chapters:"22",location:"Chinon",desc:"A student of Martin who saved his village from thirst by praying for a heavy rainstorm." },
+  { id:"GCC-17",name:"Johannis",title:"Priest / Recluse",saint:true,chapters:"23",location:"Chinon",desc:"A Breton who lived in a garden; a dry laurel tree he planted miraculously grew back." },
+  { id:"GCC-18",name:"Monegundis",title:"Nun",saint:true,chapters:"24",location:"Tours",desc:"Famous for healing sores with saliva and leaves; her tomb continues to heal." },
+  { id:"GCC-19",name:"Senoch",title:"Abbot",saint:true,chapters:"25",location:"Tours",desc:"An abbot whose life Gregory wrote; his tomb fringes heal the blind and those with chills." },
+  { id:"GCC-20",name:"Symeon",title:"Confessor / Stylite",saint:true,chapters:"26",location:"Antioch",desc:"Stood on a pillar; he struck a woman dead for entering his church in man's clothing." },
+  { id:"GCC-21",name:"Martialis",title:"Bishop",saint:true,chapters:"27, 28",location:"Limoges",desc:"Sent by Roman bishops; he miraculously moved tombs apart to allow access to his priests." },
+  { id:"GCC-22",name:"Stremonius",title:"Bishop of Clermont",saint:true,chapters:"29",location:"Issoire",desc:"First brought salvation to Clermont; his tomb was rediscovered through celestial light." },
+  { id:"GCC-23",name:"Amabilis",title:"Priest",saint:true,chapters:"32",location:"Riom",desc:"Controlled serpents and halted the horses of those who refused to pray at his tomb." },
+  { id:"GCC-24",name:"Georgia",title:"Nun",saint:true,chapters:"33",location:"Clermont",desc:"An ascetic whose funeral was honored by a flock of white doves resting on her bier." },
+  { id:"GCC-25",name:"Galla",title:"Saint",saint:true,chapters:"35",location:"Clermont",desc:"A holy woman buried in a notable tomb with high-quality sculptures." },
+  { id:"GCC-26",name:"Alexander",title:"Monk",saint:true,chapters:"35",location:"Clermont",desc:"His tomb dust provides such a popular remedy that the sarcophagus appears perforated." },
+  { id:"GCC-27",name:"Venerandus",title:"Bishop",saint:true,chapters:"34, 35, 36",location:"Clermont",desc:"A bishop whose tomb beneath the pulpit grants the results of just petitions." },
+  { id:"GCC-28",name:"Nepotianus",title:"Bishop",saint:true,chapters:"36",location:"Clermont",desc:"A man of highest holiness whose power assists those who pray over his tomb." },
+  { id:"GCC-29",name:"Germanus",title:"Bishop of Auxerre",saint:true,chapters:"40, 79, 88, 90",location:"Auxerre",desc:"A glorious confessor who punished a tribune for striking his tomb lid with a sword." },
+  { id:"GCC-30",name:"Helarius",title:"Senator",saint:true,chapters:"41",location:"Dijon",desc:"A noble who embraced his wife's neck within their tomb, proving their chaste love." },
+  { id:"GCC-31",name:"Florida",title:"Nun",saint:true,chapters:"42",location:"Dijon",desc:"A committed nun whose tomb is a site of veneration within a suburb of Dijon." },
+  { id:"GCC-32",name:"Paschasia",title:"Saint",saint:true,chapters:"42",location:"Dijon",desc:"Appeared to builders to urge them to continue working on the church of St. Benignus." },
+  { id:"GCC-33",name:"Tranquillus",title:"Bishop",saint:true,chapters:"43",location:"Dijon",desc:"A confessor whose tomb moss miraculously cured Gregory's own painful blisters." },
+  { id:"GCC-34",name:"Severinus",title:"Bishop",saint:true,chapters:"44",location:"Bordeaux",desc:"An Easterner who took over Bishop Amandus' see; he is the city's special protector." },
+  { id:"GCC-35",name:"Romanus",title:"Priest",saint:true,chapters:"45",location:"Blaye",desc:"Buried by St. Martin; he rescues people from shipwrecks on the Garonne river." },
+  { id:"GCC-36",name:"Justinus",title:"Priest",saint:true,chapters:"48",location:"Cieutat",desc:"Distinguished for miracles; possessed people are frequently cleansed at his tomb." },
+  { id:"GCC-37",name:"Similinus",title:"Priest",saint:true,chapters:"48",location:"Tarbes",desc:"Shares in Justinus' holiness and flourishes with similar healing miracles." },
+  { id:"GCC-38",name:"Severus",title:"Priest",saint:true,chapters:"49, 50",location:"Saint-Justin",desc:"A noble who cursed a medlar tree to wither, then miraculously revived it." },
+  { id:"GCC-39",name:"Theomastus",title:"Bishop of Mainz",saint:true,chapters:"52",location:"Poitiers",desc:"His tomb dust offers a remedy for toothaches and fevers so effective it is sought constantly." },
+  { id:"GCC-40",name:"Lupianus",title:"Confessor",saint:true,chapters:"53",location:"Rezé",desc:"Baptized by Hilary; his tomb provides sight to the blind and mobility to the paralytic." },
+  { id:"GCC-41",name:"Melanius",title:"Bishop of Rennes",saint:true,chapters:"54",location:"Rennes",desc:"A saint whose tomb shroud remained unburned despite a collapse of burning beams." },
+  { id:"GCC-42",name:"Victorius",title:"Bishop of Le Mans",saint:true,chapters:"55",location:"Le Mans",desc:"A good shepherd who extinguished a city fire by making the sign of the cross." },
+  { id:"GCC-43",name:"Martinus",title:"Abbot",saint:true,chapters:"56",location:"Saintes",desc:"A student of Martin of Tours who built a monastery and heals contracted hands." },
+  { id:"GCC-44",name:"Bibianus",title:"Bishop",saint:true,chapters:"57, 58",location:"Saintes",desc:"Repeatedly dispenses healing to the weak; he loosened the fingers of a withered hand." },
+  { id:"GCC-45",name:"Trojanus",title:"Bishop of Saintes",saint:true,chapters:"58, 59",location:"Saintes",desc:"Met Martin in a ball of light; his subdeacon died after revealing this secret." },
+  { id:"GCC-46",name:"Nicetius",title:"Bishop of Lyon",saint:true,chapters:"60, 61, 91, 92",location:"Lyon",desc:"A man of outstanding charity; he assisted a blind boy through visions after his death." },
+  { id:"GCC-47",name:"Helius",title:"Bishop",saint:true,chapters:"61",location:"Lyon",desc:"Embraced a pagan grave robber within his tomb until morning to expose the crime." },
+  { id:"GCC-48",name:"Epipodius",title:"Martyr",saint:true,chapters:"63",location:"Lyon",desc:"A martyr whose dropped sandal was kept by a woman whose tomb now heals the ill." },
+  { id:"GCC-49",name:"Memmius",title:"Bishop of Châlons",saint:true,chapters:"65",location:"Châlons",desc:"Revived a dead man while alive; in death, he cured Gregory's own feverish servant." },
+  { id:"GCC-50",name:"Lupus",title:"Bishop of Troyes",saint:true,chapters:"66, 67",location:"Troyes",desc:"Bound the tongue of a man who tried to drag a slave from his holy church." },
+  { id:"GCC-51",name:"Marcellinus",title:"Bishop",saint:true,chapters:"68",location:"Embrun",desc:"His baptismal pool fills miraculously on the anniversary of the Lord's Supper." },
+  { id:"GCC-52",name:"Marcellus",title:"Bishop of Die",saint:true,chapters:"69",location:"Die",desc:"A lamp at his tomb burns for a long time; its oil provides medicine to the ill." },
+  { id:"GCC-53",name:"Mitrias",title:"Athlete",saint:true,chapters:"70",location:"Aix",desc:"A slave who avenged a seized church villa by striking the invader with a fatal fever." },
+  { id:"GCC-54",name:"Aravatius",title:"Bishop of Maastricht",saint:true,chapters:"71",location:"Maastricht",desc:"Snow never touched his marble tomb, heaping up around it without moistening the site." },
+  { id:"GCC-55",name:"Cassianus",title:"Bishop",saint:true,chapters:"73, 74",location:"Autun",desc:"His tomb dust is swallowed by the ill as a remedy, appearing almost perforated." },
+  { id:"GCC-56",name:"Reticius",title:"Bishop of Autun",saint:true,chapters:"74",location:"Autun",desc:"Famous for excellence in learning; his wife's bones moved to welcome him to their tomb." },
+  { id:"GCC-57",name:"Simplicius",title:"Bishop",saint:true,chapters:"73, 75, 76",location:"Autun",desc:"Carried burning coals in his cloak without harm to prove his lifelong chastity." },
+  { id:"GCC-58",name:"Remigius",title:"Bishop of Rheims",saint:true,chapters:"78",location:"Rheims",desc:"Revived a dead girl; his tomb shroud halted a plague from entering the city." },
+  { id:"GCC-59",name:"Ursinus",title:"Bishop of Bourges",saint:true,chapters:"79",location:"Bourges",desc:"Disciples of apostles ordained him; his tomb was revealed to Abbot Agustus in a vision." },
+  { id:"GCC-60",name:"Marianus",title:"Hermit",saint:true,chapters:"80",location:"Évaux",desc:"An ascetic whose mockery by a neighbor led to the divine burning of that man's house." },
+  { id:"GCC-61",name:"Eusicius",title:"Hermit",saint:true,chapters:"81",location:"Bourges",desc:"Rejected gold as manure; he predicted King Childebert's victory in Spain." },
+  { id:"GCC-62",name:"Maximus",title:"Bishop of Riez",saint:true,chapters:"82",location:"Riez",desc:"A little boy who had exhaled his spirit was revived after being thrown before his tomb." },
+  { id:"GCC-63",name:"Valerius",title:"Bishop",saint:true,chapters:"83",location:"Saint-Lizier",desc:"His tomb was identified when a jar of wine placed upon it miraculously overflowed." },
+  { id:"GCC-64",name:"Silvester",title:"Bishop",saint:true,chapters:"84",location:"Chalon",desc:"Cures fevers through his rope bed; Gregory's mother used a piece of this rope to heal." },
+  { id:"GCC-65",name:"Desideratus",title:"Priest",saint:true,chapters:"85",location:"Chalon",desc:"A man of outstanding miracles who ended the chills of people from his cell." },
+  { id:"GCC-66",name:"Sequanus",title:"Abbot",saint:true,chapters:"86",location:"Langres",desc:"Shattered the chains of prisoners who were held by King Guntramn over a stolen horn." },
+  { id:"GCC-67",name:"Marcellus",title:"Bishop of Paris",saint:true,chapters:"87",location:"Paris",desc:"Expelled a serpent from the city; he cured Bishop Ragnimodus of a quartan fever." },
+  { id:"GCC-68",name:"Germanus",title:"Bishop of Paris",saint:true,chapters:"88, 90, 94, 104",location:"Paris",desc:"Cured a paralyzed man in a colonnade; he witnessed a tomb vibrating from insult." },
+  { id:"GCC-69",name:"Genovefa",title:"Saint",saint:true,chapters:"89",location:"Paris",desc:"Raised a dead man; petitions at her tomb extinguished the fevers of the ill." },
+  { id:"GCC-70",name:"Lusor",title:"Confessor",saint:true,chapters:"90",location:"Déols",desc:"Son of a senator; he shook his tomb to warn dozing clerics who were leaning on it." },
+  { id:"GCC-71",name:"Maximinus",title:"Bishop of Trier",saint:true,chapters:"91, 92",location:"Trier",desc:"Struck down a lying priest with death after he swore a false oath on his tomb." },
+  { id:"GCC-72",name:"Medard",title:"Bishop of Soissons",saint:true,chapters:"93",location:"Soissons",desc:"Released the chains of wretched men; his wooden staff provides medicine." },
+  { id:"GCC-73",name:"Albinus",title:"Bishop of Angers",saint:true,chapters:"94",location:"Angers",desc:"Cured a paralyzed man after Martin appeared with him at the sound of a bell." },
+  { id:"GCC-74",name:"Hospitius",title:"Confessor",saint:true,chapters:"95",location:"Nice",desc:"His relics halted a ship until the owners agreed to visit the monastery of Lérins." },
+  { id:"GCC-75",name:"Avitus",title:"Abbot",saint:true,chapters:"97",location:"Orléans",desc:"Twisted the neck of a man who worked in his vineyard on his festival day." },
+  { id:"GCC-76",name:"Cyprian",title:"Abbot",saint:true,chapters:"98",location:"Périgueux",desc:"Healed the lame and restored mobility to paralyzed people through anointing with oil." },
+  { id:"GCC-77",name:"Eparchius",title:"Hermit",saint:true,chapters:"99",location:"Angoulême",desc:"Saved a thief from the gallows after monks prayed before his tomb." },
+  { id:"GCC-80",name:"Felix",title:"Bishop of Bourges",saint:true,chapters:"100",location:"Bourges",desc:"His body remained untouched twelve years after death; his stone lid cures fevers." },
+  { id:"GCC-81",name:"Junianus",title:"Hermit",saint:true,chapters:"101",location:"Limoges",desc:"Healed the blind and paralytic, who pay an annual contribution to his shrine." },
+  { id:"GCC-82",name:"Pelagia",title:"Ascetic",saint:true,chapters:"102",location:"Limoges",desc:"Mother of Aredius; a ball of fire appeared over the church during her funeral." },
+  { id:"GCC-83",name:"Criscentia",title:"Saint",saint:true,chapters:"103, 104",location:"Paris",desc:"A girl whose tomb dust and toothpicks provide relief from fevers and pain." },
+  { id:"GCC-84",name:"Radegund",title:"Saint",saint:true,chapters:"104",location:"Poitiers",desc:"A queen whose funeral caused the possessed to shout and the nuns to weep." },
+  { id:"GCC-85",name:"Paulinus",title:"Bishop of Nola",saint:true,chapters:"108",location:"Nola",desc:"Sold all his wealth for the poor; he received sight in his eye from St. Martin." },
+  { id:"GCC-86",name:"Gregory",title:"Bishop of Tours",saint:false,chapters:"Intro, 1, 3, 6, 9, 15, 20…110",location:"Tours",desc:"The author and eyewitness; he dedicated his oratory and frequently experienced the saints' power firsthand." },
+];
+
+const CONNECTIONS = [
+  { source:"GCC-01",target:"GCC-02",desc:"Eusebius of Vercelli is described as a great supporter of Hilary in their shared struggle against Arian heresies.",type:"Family/Ecclesiastical" },
+  { source:"GCC-01",target:"GCC-03",desc:"Martin was a disciple of Hilary; Gregory notes Hilary's influence on Martin's spiritual formation and the proximity of their tombs in Poitiers.",type:"Family/Ecclesiastical" },
+  { source:"GCC-01",target:"GCC-40",desc:"Lupianus is explicitly identified as having received the gift of baptism from the hands of Bishop Hilary.",type:"Family/Ecclesiastical" },
+  { source:"GCC-03",target:"GCC-04",desc:"While praying at Catianus' tomb, Martin requests a blessing; the deceased first bishop of Tours speaks from the tomb to answer him.",type:"Miracle" },
+  { source:"GCC-03",target:"GCC-05",desc:"Martin visits the tomb of the nun Vitalina; she speaks to him from the grave to confess a small sin.",type:"Miracle" },
+  { source:"GCC-03",target:"GCC-06",desc:"Aredius of Limoges shares several eyewitness accounts and family traditions of Martin's miracles with Gregory.",type:"Translation" },
+  { source:"GCC-03",target:"GCC-11",desc:"Eufronius, as Bishop of Tours, maintained the shrine and traditions of his predecessor, St. Martin.",type:"Family/Ecclesiastical" },
+  { source:"GCC-03",target:"GCC-13",desc:"The relics of both Martin and the martyr Julian were placed together in Gregory's newly dedicated oratory.",type:"Translation" },
+  { source:"GCC-03",target:"GCC-16",desc:"Maximus of Chinon is recorded as a student of Martin of Tours who later founded a monastery under his influence.",type:"Family/Ecclesiastical" },
+  { source:"GCC-03",target:"GCC-43",desc:"Martinus of Saintes was a student of Martin of Tours and built a monastery following his teacher's specific instructions.",type:"Family/Ecclesiastical" },
+  { source:"GCC-03",target:"GCC-45",desc:"Trojanus is said to have met the spirit of St. Martin in a huge ball of light that descended from heaven.",type:"Miracle" },
+  { source:"GCC-03",target:"GCC-48",desc:"Brachio witnessed a mystical fire rising from the relics of St. Martin.",type:"Miracle" },
+  { source:"GCC-03",target:"GCC-73",desc:"A paralyzed man has a vision where Martin and Albinus appear together in the church at Angers to heal him.",type:"Miracle" },
+  { source:"GCC-03",target:"GCC-85",desc:"Paulinus of Nola wrote six books of verse about Martin's miracles and claimed to have received sight in one eye from him.",type:"Translation" },
+  { source:"GCC-06",target:"GCC-11",desc:"Aredius visited Tours during the episcopacy of Eufronius and obtained holy oil from Martin's tomb from him.",type:"Family/Ecclesiastical" },
+  { source:"GCC-06",target:"GCC-82",desc:"Pelagia is the mother of Aredius; Gregory records her death and the miraculous fire that appeared at her funeral.",type:"Family/Ecclesiastical" },
+  { source:"GCC-10",target:"GCC-11",desc:"The two virgins appear to Eufronius in a vision to rebuke him for his delay in consecrating their oratory.",type:"Miracle" },
+  { source:"GCC-11",target:"GCC-86",desc:"Eufronius was Gregory's predecessor as Bishop of Tours; Gregory frequently cites Eufronius' visions and deeds.",type:"Family/Ecclesiastical" },
+  { source:"GCC-12",target:"GCC-86",desc:"Gregory placed relics of the martyr Saturninus in his personal oratory, which resulted in a divine flash of light.",type:"Translation" },
+  { source:"GCC-14",target:"GCC-86",desc:"Gregory used the relics of Illidius to consecrate his private oratory in Tours.",type:"Translation" },
+  { source:"GCC-21",target:"GCC-06",desc:"Both figures represent the primary saints of the Limoges region, often appearing in the same local oral traditions.",type:"Translation" },
+  { source:"GCC-29",target:"GCC-59",desc:"Germanus of Auxerre and Abbot Agustus together discovered the hidden tomb of Ursinus through shared visions.",type:"Miracle" },
+  { source:"GCC-34",target:"GCC-44",desc:"Bishop Amandus was ordered by God in a vision to meet and cede his office to the holy newcomer Severinus.",type:"Family/Ecclesiastical" },
+  { source:"GCC-45",target:"GCC-35",desc:"These two bishops of Saintes are described as being joined in heaven and were buried adjacent to one another.",type:"Family/Ecclesiastical" },
+  { source:"GCC-46",target:"GCC-47",desc:"Nicetius of Lyon leads Gregory into a crypt to show him the tomb and inscription regarding the earlier Bishop Helius.",type:"Translation" },
+  { source:"GCC-55",target:"GCC-56",desc:"Cassianus succeeded Reticius as the Bishop of Autun; both are buried in the same famous cemetery.",type:"Family/Ecclesiastical" },
+  { source:"GCC-57",target:"GCC-56",desc:"Simplicius and Reticius are both noted as noble, learned bishops of Autun whose chaste marriages were a model.",type:"Family/Ecclesiastical" },
+  { source:"GCC-64",target:"GCC-86",desc:"Gregory's mother used a piece of rope from Silvester's bed to miraculously heal a feverish girl.",type:"Miracle" },
+  { source:"GCC-67",target:"GCC-65",desc:"Ragnimodus was cured of a quartan fever after praying and sleeping at the tomb of Marcellus.",type:"Miracle" },
+  { source:"GCC-68",target:"GCC-59",desc:"Germanus of Paris assisted in the physical elevation and translation of Ursinus' sarcophagus into the church at Bourges.",type:"Translation" },
+  { source:"GCC-80",target:"GCC-86",desc:"Bishop Felix is a primary oral source for Gregory, specifically regarding the miracle of the lamb.",type:"Translation" },
+  { source:"GCC-84",target:"GCC-86",desc:"Gregory personally attended Radegund's funeral, blessed her altar, and witnessed the possessed shouting.",type:"Miracle" },
+];
+
+const CONNECTION_COLORS={"Family/Ecclesiastical":"#C47A2B",Miracle:"#B83B5E",Translation:"#3B7DD8"};
+const SAINT_COLOR="#D4A843", NON_SAINT_COLOR="#6AADCF";
+
+const locGroups={};
+CHARACTERS.forEach(c=>{if(!locGroups[c.location])locGroups[c.location]=[];locGroups[c.location].push(c.id);});
+
+const CW=3000,CH=2200;
+function cR(n){if(n>=10)return 260;if(n>=7)return 220;if(n>=4)return 170;if(n>=3)return 130;return 95;}
+
+const CIRCLED={Tours:{cx:680,cy:720,r:cR(10)},Chinon:{cx:310,cy:900,r:cR(2)},Poitiers:{cx:460,cy:1200,r:cR(3)},Saintes:{cx:160,cy:1440,r:cR(3)},Limoges:{cx:700,cy:1540,r:cR(4)},Bourges:{cx:1100,cy:1050,r:cR(3)},Clermont:{cx:1280,cy:1560,r:cR(7)},Paris:{cx:1180,cy:300,r:cR(4)},Dijon:{cx:1920,cy:560,r:cR(4)},Autun:{cx:1740,cy:920,r:cR(3)},Chalon:{cx:1940,cy:1140,r:cR(2)},Lyon:{cx:1960,cy:1420,r:cR(3)}};
+
+const SINGLES={Rennes:[120,360],"Le Mans":[500,440],Angers:[280,580],"Rezé":[100,680],Luynes:[540,500],Artonne:[1060,1340],"Orléans":[880,560],Auxerre:[1520,640],Soissons:[1180,100],Rheims:[1420,110],"Châlons":[1640,230],Troyes:[1640,430],Langres:[2080,380],Maastricht:[2220,80],Trier:[2420,160],"Déols":[880,840],"Évaux":[950,1270],Riom:[1100,1320],Issoire:[1300,1900],"Angoulême":[360,1600],Bordeaux:[140,1730],Blaye:[80,1600],"Périgueux":[520,1720],"Saint-Justin":[310,1900],Toulouse:[760,2040],Tarbes:[420,2100],Cieutat:[560,2120],"Saint-Lizier":[740,2160],Die:[1820,1660],Embrun:[2100,1740],Aix:[1920,1860],Nice:[2220,1800],Riez:[2080,1900],Vercelli:[2620,1060],Nola:[2740,1520],Antioch:[2860,2020]};
+
+function locCenter(loc){if(CIRCLED[loc])return{x:CIRCLED[loc].cx,y:CIRCLED[loc].cy};if(SINGLES[loc])return{x:SINGLES[loc][0],y:SINGLES[loc][1]};return{x:CW/2,y:CH/2};}
+const circledNames=Object.keys(CIRCLED);
+
+function makeNR(links,sc){return d=>{const cc=links.filter(l=>l.source.id===d.id||l.target.id===d.id).length;return Math.max(6,4+cc*1.6)*sc;};}
+
+function forceSameLocRepulsion(minDist){let nodes;function force(alpha){for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){const a=nodes[i],b=nodes[j];if(a.location!==b.location)continue;let dx=b.x-a.x,dy=b.y-a.y,dist=Math.sqrt(dx*dx+dy*dy)||1;if(dist<minDist){const push=(minDist-dist)/dist*alpha*0.8;a.x-=dx*push;a.y-=dy*push;b.x+=dx*push;b.y+=dy*push;}}}force.initialize=n=>{nodes=n;};return force;}
+
+const tipEl=document.getElementById("tooltip");
+const container=document.getElementById("container");
+let simulation;
+
+function build(){
+  const W=container.clientWidth,H=container.clientHeight;
+  const sx=W/CW,sy=H/CH,sc=Math.min(sx,sy);
+  const cInfo={};
+  circledNames.forEach(loc=>{const c=CIRCLED[loc];cInfo[loc]={cx:c.cx*sx,cy:c.cy*sy,r:c.r*sc};});
+
+  const spreadLocs=new Set(["Tours","Clermont","Dijon","Limoges"]);
+
+  function computeSpreadTargets(cx,cy,r,count){
+    const targets=[],pad=r*0.15,usable=r-pad;
+    if(count<=4){for(let i=0;i<count;i++){const a=(2*Math.PI*i)/count-Math.PI/2;targets.push({x:cx+usable*0.7*Math.cos(a),y:cy+usable*0.7*Math.sin(a)});}}
+    else if(count<=7){const inner=2,outer=count-inner;for(let i=0;i<inner;i++){const a=(2*Math.PI*i)/inner-Math.PI/2;targets.push({x:cx+usable*0.32*Math.cos(a),y:cy+usable*0.32*Math.sin(a)});}for(let i=0;i<outer;i++){const a=(2*Math.PI*i)/outer-Math.PI/2+Math.PI/outer;targets.push({x:cx+usable*0.75*Math.cos(a),y:cy+usable*0.75*Math.sin(a)});}}
+    else{const inner=3,outer=count-inner;for(let i=0;i<inner;i++){const a=(2*Math.PI*i)/inner-Math.PI/2;targets.push({x:cx+usable*0.35*Math.cos(a),y:cy+usable*0.35*Math.sin(a)});}for(let i=0;i<outer;i++){const a=(2*Math.PI*i)/outer-Math.PI/2+Math.PI/outer;targets.push({x:cx+usable*0.78*Math.cos(a),y:cy+usable*0.78*Math.sin(a)});}}
+    return targets;
+  }
+
+  const spreadTargets={};
+  spreadLocs.forEach(loc=>{const ci=cInfo[loc];if(!ci)return;spreadTargets[loc]=computeSpreadTargets(ci.cx,ci.cy,ci.r,locGroups[loc].length);});
+
+  const locIdx={};
+  const nodes=CHARACTERS.map(c=>{
+    const ctr=locCenter(c.location),ci=cInfo[c.location];
+    if(!locIdx[c.location])locIdx[c.location]=0;
+    const idx=locIdx[c.location]++,total=locGroups[c.location].length;
+    let startX,startY,tx,ty;
+    if(spreadLocs.has(c.location)&&spreadTargets[c.location]){const t=spreadTargets[c.location][idx];startX=t.x;startY=t.y;tx=t.x;ty=t.y;}
+    else if(ci&&total>2){const ringR=ci.r*0.75,angle=(2*Math.PI*idx)/total-Math.PI/2;startX=ci.cx+ringR*Math.cos(angle);startY=ci.cy+ringR*Math.sin(angle);tx=ci.cx;ty=ci.cy;}
+    else if(ci){const off=idx===0?-ci.r*0.35:ci.r*0.35;startX=ci.cx+off;startY=ci.cy;tx=ci.cx;ty=ci.cy;}
+    else{startX=ctr.x*sx;startY=ctr.y*sy;tx=startX;ty=startY;}
+    return Object.assign({},c,{x:startX,y:startY,_cx:ci?ci.cx:ctr.x*sx,_cy:ci?ci.cy:ctr.y*sy,_r:ci?ci.r:null,_locIdx:idx,_locTotal:total,_tx:tx,_ty:ty});
+  });
+
+  const nmap={};nodes.forEach(n=>nmap[n.id]=n);
+  const links=CONNECTIONS.filter(c=>nmap[c.source]&&nmap[c.target]).map(c=>Object.assign({},c,{source:nmap[c.source],target:nmap[c.target]}));
+  const nR=makeNR(links,sc);
+  const minSep=80*sc;
+
+  const svg=d3.select("#graph").attr("width",W).attr("height",H);
+  svg.selectAll("*").remove();
+  const defs=svg.append("defs");
+
+  const gl=defs.append("filter").attr("id","glow");gl.append("feGaussianBlur").attr("stdDeviation","2").attr("result","b");const fm=gl.append("feMerge");fm.append("feMergeNode").attr("in","b");fm.append("feMergeNode").attr("in","SourceGraphic");
+  const gl2=defs.append("filter").attr("id","glowEdge");gl2.append("feGaussianBlur").attr("stdDeviation","3").attr("result","b2");const fm2=gl2.append("feMerge");fm2.append("feMergeNode").attr("in","b2");fm2.append("feMergeNode").attr("in","SourceGraphic");
+
+  const bg=defs.append("radialGradient").attr("id","bg");bg.append("stop").attr("offset","0%").attr("stop-color","#2a2520");bg.append("stop").attr("offset","100%").attr("stop-color","#1a1612");
+  svg.append("rect").attr("width",W).attr("height",H).attr("fill","url(#bg)");
+  const pat=defs.append("pattern").attr("id","grid").attr("width",40).attr("height",40).attr("patternUnits","userSpaceOnUse");pat.append("path").attr("d","M 40 0 L 0 0 0 40").attr("fill","none").attr("stroke","#3a3228").attr("stroke-width",0.4);
+  svg.append("rect").attr("width",W).attr("height",H).attr("fill","url(#grid)").attr("opacity",0.3);
+
+  const g=svg.append("g");
+  svg.call(d3.zoom().scaleExtent([0.15,8]).on("zoom",e=>g.attr("transform",e.transform)));
+
+  // Circles + watermark labels
+  const cG=g.append("g");
+  circledNames.forEach(loc=>{const ci=cInfo[loc];if(!ci)return;cG.append("circle").attr("cx",ci.cx).attr("cy",ci.cy).attr("r",ci.r).attr("fill","rgba(50,44,36,0.18)").attr("stroke","#6a5e4a").attr("stroke-width",1.4).attr("stroke-dasharray","8,5").attr("opacity",0.8);const fs=Math.max(11,Math.min(ci.r*0.24,26*sc));cG.append("text").attr("x",ci.cx).attr("y",ci.cy+fs*0.35).attr("text-anchor","middle").attr("fill","#c4956a").attr("opacity",0.65).attr("font-size",fs+"px").attr("font-family","'Palatino Linotype','Book Antiqua',Palatino,serif").attr("font-style","italic").attr("letter-spacing","3px").attr("pointer-events","none").text(loc.toUpperCase());});
+
+  // Single labels
+  const uG=g.append("g");
+  Object.entries(SINGLES).forEach(([loc,pos])=>{if(!locGroups[loc]||!locGroups[loc].length)return;const fs=Math.max(7.5,9*sc);uG.append("text").attr("x",pos[0]*sx).attr("y",pos[1]*sy+24*sc).attr("text-anchor","middle").attr("fill","#c4956a").attr("font-size",fs+"px").attr("font-family","'Palatino Linotype','Book Antiqua',Palatino,serif").attr("font-style","italic").attr("letter-spacing","1px").attr("paint-order","stroke").attr("stroke","#1a1612").attr("stroke-width",2.5*sc).attr("stroke-linejoin","round").attr("pointer-events","none").text(loc);});
+
+  // Links
+  const lG=g.append("g");
+  const lnk=lG.selectAll("line.v").data(links).enter().append("line").attr("stroke",d=>CONNECTION_COLORS[d.type]).attr("stroke-width",1.6*sc).attr("stroke-opacity",0.4);
+  const lnkH=lG.selectAll("line.h").data(links).enter().append("line").attr("stroke","transparent").attr("stroke-width",16).attr("cursor","pointer");
+
+  // Nodes
+  const nG=g.append("g");
+  let wasDragged=false;
+  const nEls=nG.selectAll("g").data(nodes).enter().append("g").attr("cursor","grab").call(d3.drag().on("start",(ev,d)=>{wasDragged=false;if(!ev.active)simulation.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;}).on("drag",(ev,d)=>{wasDragged=true;d.fx=ev.x;d.fy=ev.y;}).on("end",(ev,d)=>{if(!ev.active)simulation.alphaTarget(0);d.fx=null;d.fy=null;}));
+
+  nEls.append("circle").attr("r",nR).attr("fill",d=>d.saint?SAINT_COLOR:NON_SAINT_COLOR).attr("stroke",d=>d.saint?"#f0d890":"#9dd4ea").attr("stroke-width",1.5*sc).attr("filter","url(#glow)");
+
+  const labelFS=Math.max(7,9*sc);
+  nEls.append("text").text(d=>d.name).attr("dy",d=>{if(d._r&&d._locTotal>3)return d._locIdx%2===0?-(nR(d)+5*sc):(nR(d)+labelFS+2*sc);return-(nR(d)+5*sc);}).attr("text-anchor","middle").attr("fill","#e8dcc8").attr("font-size",labelFS+"px").attr("font-family","'Palatino Linotype','Book Antiqua',Palatino,serif").attr("font-weight","600").attr("paint-order","stroke").attr("stroke","#1a1612").attr("stroke-width",2.8*sc).attr("stroke-linejoin","round").attr("pointer-events","none");
+
+  // Tooltip helper
+  function showTip(mx,my,html){tipEl.innerHTML=html;tipEl.style.display="block";tipEl.style.left=Math.min(mx+14,W-310)+"px";tipEl.style.top=Math.max(10,Math.min(my-10,H-230))+"px";}
+  function hideTip(){tipEl.style.display="none";}
+
+  function nodeTipHTML(d){
+    const col=d.saint?SAINT_COLOR:NON_SAINT_COLOR;
+    const icon=d.saint?"⛪ Saint":"✦ Not a Saint";
+    return '<div class="tip-name" style="color:'+col+'">'+d.name+'</div><div class="tip-title">'+d.title+'</div><div class="tip-meta">'+icon+' · '+d.location+'</div><div class="tip-desc">'+d.desc+'</div><div class="tip-ch">Chapters: '+d.chapters+'</div>';
+  }
+  function linkTipHTML(d){
+    const col=CONNECTION_COLORS[d.type];
+    return '<div class="tip-type-row"><div class="leg-line" style="width:24px;background:'+col+'"></div><span class="tip-type-label" style="color:'+col+'">'+d.type+'</span></div><div class="tip-link-names">'+d.source.name+' ↔ '+d.target.name+'</div><div class="tip-link-desc">'+d.desc+'</div>';
+  }
+
+  // Interaction
+  let pinnedId=null;
+
+  function applyHighlight(nodeId){
+    const connIds=new Set([nodeId]);
+    links.forEach(l=>{if(l.source.id===nodeId)connIds.add(l.target.id);if(l.target.id===nodeId)connIds.add(l.source.id);});
+    lnk.each(function(l){const hit=l.source.id===nodeId||l.target.id===nodeId;d3.select(this).transition().duration(150).attr("stroke-opacity",hit?1:0.06).attr("stroke-width",hit?3.5*sc:0.8*sc).attr("filter",hit?"url(#glowEdge)":"none");});
+    nEls.each(function(n){const on=connIds.has(n.id);d3.select(this).select("circle").transition().duration(150).attr("opacity",on?1:0.15).attr("stroke-width",n.id===nodeId?4*sc:1.5*sc);d3.select(this).select("text").transition().duration(150).attr("opacity",on?1:0.1);});
+  }
+  function clearHighlight(){
+    lnk.transition().duration(200).attr("stroke-opacity",0.4).attr("stroke-width",1.6*sc).attr("filter","none");
+    nEls.each(function(){d3.select(this).select("circle").transition().duration(200).attr("opacity",1).attr("stroke-width",1.5*sc);d3.select(this).select("text").transition().duration(200).attr("opacity",1);});
+  }
+
+  nEls.on("click",(ev,d)=>{ev.stopPropagation();if(wasDragged)return;if(pinnedId===d.id){pinnedId=null;clearHighlight();}else{pinnedId=d.id;applyHighlight(d.id);}});
+  svg.on("click",()=>{if(pinnedId){pinnedId=null;clearHighlight();}});
+
+  nEls.on("mouseenter",(ev,d)=>{const [mx,my]=d3.pointer(ev,container);showTip(mx,my,nodeTipHTML(d));if(!pinnedId)applyHighlight(d.id);}).on("mouseleave",()=>{hideTip();if(!pinnedId)clearHighlight();});
+
+  lnkH.on("click",ev=>ev.stopPropagation()).on("mouseenter",(ev,d)=>{const [mx,my]=d3.pointer(ev,container);showTip(mx,my,linkTipHTML(d));if(!pinnedId)lnk.filter(l=>l===d).attr("stroke-opacity",1).attr("stroke-width",3.5*sc).attr("filter","url(#glowEdge)");}).on("mouseleave",(ev,d)=>{hideTip();if(!pinnedId)lnk.filter(l=>l===d).attr("stroke-opacity",0.4).attr("stroke-width",1.6*sc).attr("filter","none");});
+
+  // Simulation
+  simulation=d3.forceSimulation(nodes)
+    .force("link",d3.forceLink(links).id(d=>d.id).distance(55*sc).strength(0.1))
+    .force("charge",d3.forceManyBody().strength(-30*sc))
+    .force("collision",d3.forceCollide().radius(d=>nR(d)+28*sc).strength(1).iterations(4))
+    .force("sameLocRepel",forceSameLocRepulsion(minSep))
+    .force("x",d3.forceX(d=>d._tx).strength(d=>spreadLocs.has(d.location)?0.7:0.45))
+    .force("y",d3.forceY(d=>d._ty).strength(d=>spreadLocs.has(d.location)?0.7:0.45));
+
+  simulation.on("tick",()=>{
+    nodes.forEach(d=>{if(!d._r)return;const dx=d.x-d._cx,dy=d.y-d._cy,dist=Math.sqrt(dx*dx+dy*dy),maxR=d._r-nR(d)-8*sc;if(maxR>0&&dist>maxR){const r=maxR/dist;d.x=d._cx+dx*r;d.y=d._cy+dy*r;}});
+    lnk.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y).attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
+    lnkH.attr("x1",d=>d.source.x).attr("y1",d=>d.source.y).attr("x2",d=>d.target.x).attr("y2",d=>d.target.y);
+    nEls.attr("transform",d=>"translate("+d.x+","+d.y+")");
+  });
+  simulation.alpha(1).restart();
+}
+
+build();
+window.addEventListener("resize",()=>{if(simulation)simulation.stop();build();});
+</script>
+</body>
+</html>
