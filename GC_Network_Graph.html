@@ -7,86 +7,29 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap');
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: #0f0f14;
-    color: #e8e0d4;
-    font-family: 'EB Garamond', Georgia, serif;
-    overflow: hidden;
-    width: 100vw;
-    height: 100vh;
-  }
-
-  #header {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    background: linear-gradient(180deg, rgba(15,15,20,0.97) 0%, rgba(15,15,20,0.8) 80%, transparent 100%);
-    padding: 14px 30px 24px;
-    text-align: center;
-    pointer-events: none;
-  }
-  #header h1 {
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    font-size: 22px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: #c9a96e;
-    text-shadow: 0 0 20px rgba(201,169,110,0.3);
-  }
-  #header p {
-    font-size: 13px;
-    color: #8a8272;
-    margin-top: 4px;
-    letter-spacing: 1px;
-  }
-
+  body { background: #0f0f14; color: #e8e0d4; font-family: 'EB Garamond', Georgia, serif; overflow: hidden; width: 100vw; height: 100vh; }
+  #header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: linear-gradient(180deg, rgba(15,15,20,0.97) 0%, rgba(15,15,20,0.8) 80%, transparent 100%); padding: 12px 30px 20px; text-align: center; pointer-events: none; }
+  #header h1 { font-family: 'Cinzel', serif; font-weight: 700; font-size: 20px; letter-spacing: 4px; text-transform: uppercase; color: #c9a96e; text-shadow: 0 0 20px rgba(201,169,110,0.3); }
+  #header p { font-size: 12px; color: #8a8272; margin-top: 3px; letter-spacing: 1px; }
   #graph-container { width: 100vw; height: 100vh; }
   svg { width: 100%; height: 100%; cursor: grab; }
   svg:active { cursor: grabbing; }
-
-  .tooltip {
-    position: fixed; pointer-events: none;
-    background: rgba(20, 18, 25, 0.96);
-    border: 1px solid rgba(201,169,110,0.4);
-    border-radius: 6px; padding: 12px 16px;
-    max-width: 340px; font-family: 'EB Garamond', serif;
-    font-size: 14px; color: #e8e0d4;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-    z-index: 200; opacity: 0;
-    transition: opacity 0.15s ease; line-height: 1.5;
-  }
+  .tooltip { position: fixed; pointer-events: none; background: rgba(20,18,25,0.96); border: 1px solid rgba(201,169,110,0.4); border-radius: 6px; padding: 10px 14px; max-width: 320px; font-family: 'EB Garamond', serif; font-size: 13px; color: #e8e0d4; box-shadow: 0 8px 32px rgba(0,0,0,0.6); z-index: 200; opacity: 0; transition: opacity 0.15s ease; line-height: 1.45; }
   .tooltip.visible { opacity: 1; }
-  .tooltip .tt-name { font-family: 'Cinzel', serif; font-weight: 600; font-size: 15px; color: #c9a96e; margin-bottom: 6px; }
-  .tooltip .tt-status { font-style: italic; color: #a89880; margin-bottom: 4px; }
-  .tooltip .tt-loc { color: #7a9ea8; font-size: 13px; margin-bottom: 6px; }
-  .tooltip .tt-desc { color: #c8c0b4; font-size: 13.5px; }
-  .tooltip .tt-conn-type { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-bottom: 6px; font-weight: 500; }
-
-  #legend {
-    position: fixed; bottom: 16px; left: 16px; z-index: 100;
-    background: rgba(20,18,25,0.92); border: 1px solid rgba(201,169,110,0.25);
-    border-radius: 8px; padding: 14px 18px; font-size: 12.5px;
-  }
-  #legend h3 { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; color: #c9a96e; margin-bottom: 8px; text-transform: uppercase; }
-  .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-  .legend-line { width: 24px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+  .tooltip .tt-name { font-family: 'Cinzel', serif; font-weight: 600; font-size: 14px; color: #c9a96e; margin-bottom: 4px; }
+  .tooltip .tt-status { font-style: italic; color: #a89880; margin-bottom: 3px; }
+  .tooltip .tt-loc { color: #7a9ea8; font-size: 12px; margin-bottom: 5px; }
+  .tooltip .tt-desc { color: #c8c0b4; font-size: 12.5px; }
+  .tooltip .tt-conn-type { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 11px; margin-bottom: 5px; font-weight: 500; }
+  #legend { position: fixed; bottom: 14px; left: 14px; z-index: 100; background: rgba(20,18,25,0.92); border: 1px solid rgba(201,169,110,0.25); border-radius: 8px; padding: 12px 16px; font-size: 11.5px; }
+  #legend h3 { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; color: #c9a96e; margin-bottom: 6px; text-transform: uppercase; }
+  .legend-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 20px; height: 2.5px; border-radius: 2px; flex-shrink: 0; }
   .legend-label { color: #b0a898; }
-
-  #controls {
-    position: fixed; bottom: 16px; right: 16px; z-index: 100;
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  #controls button {
-    background: rgba(20,18,25,0.92); border: 1px solid rgba(201,169,110,0.3);
-    color: #c9a96e; font-family: 'Cinzel', serif; font-size: 16px;
-    width: 36px; height: 36px; border-radius: 6px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
-  }
+  #controls { position: fixed; bottom: 14px; right: 14px; z-index: 100; display: flex; flex-direction: column; gap: 5px; }
+  #controls button { background: rgba(20,18,25,0.92); border: 1px solid rgba(201,169,110,0.3); color: #c9a96e; font-family: 'Cinzel', serif; font-size: 15px; width: 32px; height: 32px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
   #controls button:hover { background: rgba(201,169,110,0.15); border-color: #c9a96e; }
 </style>
 </head>
@@ -95,20 +38,17 @@
   <h1>Glory of the Confessors</h1>
   <p>Character Relationships &amp; Saintly Geography of Merovingian Gaul</p>
 </div>
-
 <div id="graph-container"><svg id="graph"></svg></div>
 <div class="tooltip" id="tooltip"></div>
-
 <div id="legend">
   <h3>Nodes</h3>
   <div class="legend-row"><div class="legend-dot" style="background:#c9a96e"></div><span class="legend-label">Saint</span></div>
   <div class="legend-row"><div class="legend-dot" style="background:#6a8caf"></div><span class="legend-label">Non-Saint</span></div>
-  <h3 style="margin-top:10px">Connections</h3>
+  <h3 style="margin-top:8px">Connections</h3>
   <div class="legend-row"><div class="legend-line" style="background:#b08040"></div><span class="legend-label">Family / Ecclesiastical</span></div>
   <div class="legend-row"><div class="legend-line" style="background:#d4a0d4"></div><span class="legend-label">Translation (relic transfer)</span></div>
   <div class="legend-row"><div class="legend-line" style="background:#50b8a0"></div><span class="legend-label">Miracle</span></div>
 </div>
-
 <div id="controls">
   <button id="zoom-in" title="Zoom In">+</button>
   <button id="zoom-out" title="Zoom Out">&minus;</button>
@@ -125,7 +65,7 @@ const characters = [
   {id:"GCC-006",name:"Aredius",status:"Abbot/Priest",saint:"No",chapters:"9, 10, 102",location:"Limoges",desc:"A holy man who shared stories of Martin\u2019s oil and planted vines with Gregory."},
   {id:"GCC-007",name:"Venantius",status:"Abbot",saint:"Saint",chapters:"15",location:"Tours",desc:"An abbot of outstanding holiness whose tomb cures chilling fevers."},
   {id:"GCC-008",name:"Papula",status:"Abbot (cloaked as male)",saint:"Saint",chapters:"16",location:"Tours",desc:"A woman who lived as a monk for 30 years and was elected abbot before her gender was revealed."},
-  {id:"GCC-009",name:"Benignus",status:"Foreign Bishop",saint:"Saint",chapters:"17",location:"Tours",desc:"A \u201cforeigner\u201d bishop who punished a man for stealing his tomb lid and ordered its restoration."},
+  {id:"GCC-009",name:"Benignus",status:"Foreign Bishop",saint:"Saint",chapters:"17",location:"Tours",desc:"A \u201cforeigner\u201d bishop who punished a man for stealing his tomb lid."},
   {id:"GCC-010",name:"Maura",status:"Virgin",saint:"Saint",chapters:"18",location:"Tours",desc:"One of two virgins who appeared to Bishop Eufronius to request the dedication of their oratory."},
   {id:"GCC-011",name:"Britta",status:"Virgin",saint:"Saint",chapters:"18",location:"Tours",desc:"Companion to Maura; described as \u201cwhiter than snow\u201d during her appearance to Eufronius."},
   {id:"GCC-012",name:"Eufronius",status:"Bishop of Tours",saint:"Saint",chapters:"9, 18\u201320",location:"Tours",desc:"Gregory\u2019s predecessor; he predicted the death of King Charibert and dedicated sacred sites."},
@@ -150,7 +90,7 @@ const characters = [
   {id:"GCC-031",name:"Liminius",status:"Martyr",saint:"Saint",chapters:"35",location:"Clermont",desc:"Buried in the church of St. Venerandus, though lacking a public cult in Gregory\u2019s time."},
   {id:"GCC-032",name:"Nepotianus",status:"Bishop of Clermont",saint:"Saint",chapters:"36",location:"Clermont",desc:"A man of the highest holiness who grants requests from his tomb."},
   {id:"GCC-033",name:"Brachio",status:"Abbot",saint:"No",chapters:"38",location:"Tours",desc:"Witnessed a ball of fire rising from relics placed on an altar."},
-  {id:"GCC-034",name:"Germanus",status:"Bishop of Auxerre",saint:"Saint",chapters:"40",location:"Auxerre",desc:"Died in Rome; his relics were deposited in a church in Moissat after a tribune was punished for striking his tomb."},
+  {id:"GCC-034",name:"Germanus",status:"Bishop of Auxerre",saint:"Saint",chapters:"40",location:"Auxerre",desc:"Died in Rome; his relics were deposited in a church in Moissat."},
   {id:"GCC-035",name:"Avitus",status:"Bishop of Clermont",saint:"No",chapters:"40",location:"Clermont",desc:"Accompanied Gregory to Moissat and experienced the miraculous fragrance of the relics."},
   {id:"GCC-036",name:"Helarius",status:"Senator (Chaste Husband)",saint:"Saint",chapters:"41",location:"Dijon",desc:"Noted for his marital chastity; he reached out from his tomb to embrace his wife\u2019s neck during her burial."},
   {id:"GCC-037",name:"Florida",status:"Nun",saint:"Saint",chapters:"42",location:"Dijon",desc:"A committed nun buried in a church near St. Paschasia."},
@@ -183,11 +123,11 @@ const characters = [
   {id:"GCC-064",name:"Aravatius",status:"Bishop of Maastricht",saint:"Saint",chapters:"71",location:"Maastricht",desc:"Snow never touches his tomb; Bishop Monulf later built a huge church for him."},
   {id:"GCC-065",name:"Monulf",status:"Bishop of Maastricht",saint:"No",chapters:"71",location:"Maastricht",desc:"Constructed a worthy church and translated the body of Aravatius."},
   {id:"GCC-066",name:"Cassianus",status:"Bishop of Autun",saint:"Saint",chapters:"73, 74",location:"Autun",desc:"Succeeded Reticius; his dust-covered tomb is sought by the ill."},
-  {id:"GCC-067",name:"Reticius",status:"Bishop of Autun",saint:"Saint",chapters:"74",location:"Autun",desc:"Famous for learning; shared a tomb with his chaste wife; his bier became immovable until he was brought to her."},
+  {id:"GCC-067",name:"Reticius",status:"Bishop of Autun",saint:"Saint",chapters:"74",location:"Autun",desc:"Famous for learning; shared a tomb with his chaste wife."},
   {id:"GCC-068",name:"Simplicius",status:"Bishop of Autun",saint:"Saint",chapters:"73, 75, 76",location:"Autun",desc:"Demonstrated his marital chastity by holding burning coals in his cloak without harm."},
   {id:"GCC-069",name:"Felix",status:"Bishop of Nantes",saint:"No",chapters:"77",location:"Nantes",desc:"Related a story about a bishop who had a bright lamb (the Holy Spirit) on his breast."},
   {id:"GCC-070",name:"Remigius",status:"Bishop of Rheims",saint:"Saint",chapters:"78",location:"Rheims",desc:"Baptized the Franks; his shroud was used to circle the city and halt a plague."},
-  {id:"GCC-071",name:"Ursinus",status:"Bishop of Bourges",saint:"Saint",chapters:"79",location:"Bourges",desc:"The first bishop of Bourges; his tomb was rediscovered via visions by Abbot Agustus and Bishop Germanus."},
+  {id:"GCC-071",name:"Ursinus",status:"Bishop of Bourges",saint:"Saint",chapters:"79",location:"Bourges",desc:"The first bishop of Bourges; his tomb was rediscovered via visions."},
   {id:"GCC-072",name:"Agustus",status:"Abbot",saint:"No",chapters:"79",location:"Bourges",desc:"A crippled man healed by Martin\u2019s relics; he built an oratory and rediscovered Ursinus\u2019 body."},
   {id:"GCC-073",name:"Germanus",status:"Bishop of Paris",saint:"Saint",chapters:"79, 88, 90",location:"Paris",desc:"Assisted in finding Ursinus; his own body in Paris cured a paralyzed man during a royal visit."},
   {id:"GCC-074",name:"Probianus",status:"Bishop of Bourges",saint:"No",chapters:"79",location:"Bourges",desc:"Doubted Agustus\u2019 visions until Germanus of Paris confirmed them."},
@@ -208,7 +148,7 @@ const characters = [
   {id:"GCC-089",name:"Nicetius",status:"Bishop of Trier",saint:"Saint",chapters:"91, 92",location:"Trier",desc:"A man of complete holiness whose tomb breaks chains and expels demons."},
   {id:"GCC-090",name:"Medard",status:"Bishop of Soissons",saint:"Saint",chapters:"93",location:"Soissons",desc:"Released the chains of the wretched; a sliver from his door cured a referendary\u2019s toothache."},
   {id:"GCC-091",name:"Albinus",status:"Bishop of Angers",saint:"Saint",chapters:"94",location:"Angers",desc:"Cured a paralyzed man who heard he would be visited by Albinus and Martin of Tours."},
-  {id:"GCC-092",name:"Hospitius",status:"Servant of God",saint:"Saint",chapters:"95",location:"Nice",desc:"A miracle-worker whose relics stopped a ship owned by Jews until they agreed to go to L\u00e9rins."},
+  {id:"GCC-092",name:"Hospitius",status:"Servant of God",saint:"Saint",chapters:"95",location:"Nice",desc:"A miracle-worker whose relics stopped a ship until they agreed to go to L\u00e9rins."},
   {id:"GCC-093",name:"Ingenuus",status:"Old Man/Hermit",saint:"Saint",chapters:"96",location:"Autun",desc:"Lived in the wilderness; he used a wooden pot over fire that never burned."},
   {id:"GCC-094",name:"Avitus",status:"Abbot",saint:"Saint",chapters:"97",location:"Orl\u00e9ans",desc:"Predicted his own death; a man was punished with a twisted neck for working on his festival."},
   {id:"GCC-095",name:"Cyprian",status:"Abbot",saint:"Saint",chapters:"98",location:"P\u00e9rigueux",desc:"Healed the lame, blind, and lepers with oil and prayer."},
@@ -228,139 +168,135 @@ const connections = [
   {source:"GCC-001",target:"GCC-003",desc:"Martin cites Hilary as an example of sanctity while visiting the tomb of Vitalina.",type:"translation"},
   {source:"GCC-001",target:"GCC-047",desc:"Lupianus was baptized by Bishop Hilary.",type:"family/ecclesiastical"},
   {source:"GCC-001",target:"GCC-087",desc:"Lusor was a descendant of the family of St. Hilary.",type:"family/ecclesiastical"},
-  {source:"GCC-003",target:"GCC-004",desc:"Martin prayed at Catianus\u2019 tomb; they spoke to each other through the veil of death.",type:"miracle"},
-  {source:"GCC-003",target:"GCC-005",desc:"Martin visited the tomb of the virgin Vitalina and interceded for her soul.",type:"miracle"},
+  {source:"GCC-003",target:"GCC-004",desc:"Martin prayed at Catianus\u2019 tomb; they spoke through the veil of death.",type:"miracle"},
+  {source:"GCC-003",target:"GCC-005",desc:"Martin visited the tomb of Vitalina and interceded for her soul.",type:"miracle"},
   {source:"GCC-003",target:"GCC-006",desc:"Aredius shared accounts of Martin\u2019s miraculous oil and planted vines with Gregory.",type:"translation"},
   {source:"GCC-003",target:"GCC-012",desc:"During Eufronius\u2019 time, Aredius took oil from Martin\u2019s tomb to perform healings.",type:"translation"},
   {source:"GCC-003",target:"GCC-016",desc:"Gregory formally transferred Martin\u2019s relics to his new oratory.",type:"translation"},
   {source:"GCC-003",target:"GCC-018",desc:"Maximus was a student of Martin of Tours.",type:"family/ecclesiastical"},
   {source:"GCC-003",target:"GCC-042",desc:"Martin personally placed Romanus in his tomb.",type:"family/ecclesiastical"},
-  {source:"GCC-003",target:"GCC-050",desc:"Martinus was a student of Martin of Tours and built a monastery on his instructions.",type:"family/ecclesiastical"},
-  {source:"GCC-003",target:"GCC-053",desc:"Trojanus saw St. Martin in a divine vision and conversed with him.",type:"miracle"},
-  {source:"GCC-003",target:"GCC-072",desc:"Agustus was healed of his paralysis by the placement of Martin\u2019s relics.",type:"miracle"},
+  {source:"GCC-003",target:"GCC-050",desc:"Martinus was a student of Martin of Tours.",type:"family/ecclesiastical"},
+  {source:"GCC-003",target:"GCC-053",desc:"Trojanus saw St. Martin in a divine vision.",type:"miracle"},
+  {source:"GCC-003",target:"GCC-072",desc:"Agustus was healed by the placement of Martin\u2019s relics.",type:"miracle"},
   {source:"GCC-003",target:"GCC-091",desc:"Martin and Albinus appeared together in a vision to heal a paralyzed man.",type:"miracle"},
-  {source:"GCC-003",target:"GCC-099",desc:"During Pelagia\u2019s funeral, people cried out that St. Martin had arrived to attend.",type:"miracle"},
-  {source:"GCC-003",target:"GCC-104",desc:"Paulinus of Nola wrote about Martin and received sight in his eye from him.",type:"miracle"},
+  {source:"GCC-003",target:"GCC-099",desc:"During Pelagia\u2019s funeral, people cried out that St. Martin had arrived.",type:"miracle"},
+  {source:"GCC-003",target:"GCC-104",desc:"Paulinus of Nola received sight in his eye from Martin.",type:"miracle"},
   {source:"GCC-004",target:"GCC-024",desc:"Both Catianus and Stremonius were sent by Roman bishops to convert Gaul.",type:"family/ecclesiastical"},
   {source:"GCC-006",target:"GCC-016",desc:"Aredius sat with Gregory and recounted the miracles of Martin\u2019s relics.",type:"translation"},
   {source:"GCC-006",target:"GCC-099",desc:"Pelagia was the mother of Abbot Aredius.",type:"family/ecclesiastical"},
   {source:"GCC-010",target:"GCC-011",desc:"Maura and Britta are companions and fellow virgins buried together.",type:"family/ecclesiastical"},
-  {source:"GCC-010",target:"GCC-012",desc:"Maura appeared to Eufronius in a vision to rebuke his delay in blessing their oratory.",type:"miracle"},
+  {source:"GCC-010",target:"GCC-012",desc:"Maura appeared to Eufronius to rebuke his delay in blessing their oratory.",type:"miracle"},
   {source:"GCC-011",target:"GCC-012",desc:"Britta appeared to Eufronius alongside Maura to request his favor.",type:"miracle"},
-  {source:"GCC-012",target:"GCC-016",desc:"Gregory dedicated an oratory in a room previously used by his predecessor Eufronius.",type:"family/ecclesiastical"},
+  {source:"GCC-012",target:"GCC-016",desc:"Gregory dedicated an oratory in a room previously used by Eufronius.",type:"family/ecclesiastical"},
   {source:"GCC-013",target:"GCC-016",desc:"Gregory included Saturninus\u2019 relics in the transfer to his new oratory.",type:"translation"},
   {source:"GCC-014",target:"GCC-016",desc:"Gregory included Julian\u2019s relics in the transfer to his new oratory.",type:"translation"},
   {source:"GCC-015",target:"GCC-016",desc:"Gregory included Illidius\u2019 relics in the transfer to his new oratory.",type:"translation"},
-  {source:"GCC-017",target:"GCC-003",desc:"Possessed men from the church of St. Martin revealed the hidden tomb of Sollemnis.",type:"miracle"},
-  {source:"GCC-024",target:"GCC-025",desc:"As a deacon, Cautinus witnessed a divine light at Stremonius\u2019 tomb and honored it.",type:"translation"},
+  {source:"GCC-017",target:"GCC-003",desc:"Possessed men from St. Martin\u2019s church revealed the hidden tomb of Sollemnis.",type:"miracle"},
+  {source:"GCC-024",target:"GCC-025",desc:"As a deacon, Cautinus witnessed a divine light at Stremonius\u2019 tomb.",type:"translation"},
   {source:"GCC-033",target:"GCC-003",desc:"Brachio witnessed a ball of fire rising from relics in Martin\u2019s church.",type:"miracle"},
   {source:"GCC-033",target:"GCC-016",desc:"Gregory recorded the life and visions of Abbot Brachio.",type:"translation"},
   {source:"GCC-034",target:"GCC-035",desc:"Bishop Avitus visited Germanus\u2019 relics and smelled a miraculous fragrance.",type:"translation"},
   {source:"GCC-040",target:"GCC-041",desc:"Severinus and Amandus shared the episcopacy of Bordeaux by divine command.",type:"family/ecclesiastical"},
   {source:"GCC-043",target:"GCC-044",desc:"Justinus and Similinus are fellow priests whose merits and powers are linked.",type:"family/ecclesiastical"},
-  {source:"GCC-050",target:"GCC-051",desc:"Bishop Palladius successfully moved Martinus\u2019 tomb through divine assistance.",type:"translation"},
+  {source:"GCC-050",target:"GCC-051",desc:"Bishop Palladius moved Martinus\u2019 tomb through divine assistance.",type:"translation"},
   {source:"GCC-052",target:"GCC-053",desc:"Trojanus was buried next to the tomb of Bishop Bibianus.",type:"family/ecclesiastical"},
   {source:"GCC-054",target:"GCC-016",desc:"Gregory walked with Nicetius of Lyon to visit various holy shrines.",type:"family/ecclesiastical"},
-  {source:"GCC-054",target:"GCC-055",desc:"Nicetius shared the account of Helius\u2019 miraculous embrace of a tomb-robber with Gregory.",type:"translation"},
+  {source:"GCC-054",target:"GCC-055",desc:"Nicetius shared the account of Helius\u2019 miraculous embrace of a tomb-robber.",type:"translation"},
   {source:"GCC-057",target:"GCC-016",desc:"Gregory personally prayed at Memmius\u2019 tomb for his sick servant.",type:"miracle"},
   {source:"GCC-058",target:"GCC-059",desc:"Aventinus was a monk and assistant to Bishop Lupus.",type:"family/ecclesiastical"},
   {source:"GCC-064",target:"GCC-065",desc:"Bishop Monulf built a church and translated the body of Aravatius.",type:"translation"},
   {source:"GCC-066",target:"GCC-067",desc:"Cassianus succeeded Reticius as the Bishop of Autun.",type:"family/ecclesiastical"},
-  {source:"GCC-071",target:"GCC-072",desc:"Ursinus appeared to Abbot Agustus in a vision to reveal his burial site.",type:"miracle"},
-  {source:"GCC-071",target:"GCC-073",desc:"Ursinus appeared simultaneously to Germanus of Paris to request his translation.",type:"miracle"},
-  {source:"GCC-071",target:"GCC-074",desc:"Ursinus\u2019 body was rediscovered and translated during Probianus\u2019 episcopacy.",type:"translation"},
+  {source:"GCC-071",target:"GCC-072",desc:"Ursinus appeared to Agustus in a vision to reveal his burial site.",type:"miracle"},
+  {source:"GCC-071",target:"GCC-073",desc:"Ursinus appeared to Germanus of Paris to request his translation.",type:"miracle"},
+  {source:"GCC-071",target:"GCC-074",desc:"Ursinus\u2019 body was rediscovered during Probianus\u2019 episcopacy.",type:"translation"},
   {source:"GCC-072",target:"GCC-073",desc:"Agustus and Germanus of Paris worked together to excavate Ursinus\u2019 tomb.",type:"translation"},
   {source:"GCC-072",target:"GCC-074",desc:"Bishop Probianus ordained Agustus as an abbot.",type:"family/ecclesiastical"},
   {source:"GCC-073",target:"GCC-074",desc:"Germanus of Paris visited and stayed with Bishop Probianus.",type:"family/ecclesiastical"},
   {source:"GCC-073",target:"GCC-087",desc:"Germanus of Paris celebrated vigils at the tomb of the blessed Lusor.",type:"translation"},
   {source:"GCC-080",target:"GCC-016",desc:"Gregory\u2019s mother used a piece of Silvester\u2019s bed-rope to heal a feverish girl.",type:"miracle"},
-  {source:"GCC-081",target:"GCC-082",desc:"Bishop Agricola gathered clergy to transfer the body of the priest Desideratus.",type:"translation"},
-  {source:"GCC-084",target:"GCC-085",desc:"Ragnimodus (as a priest) was cured of fever at the tomb of Marcellus.",type:"miracle"},
-  {source:"GCC-088",target:"GCC-089",desc:"Nicetius of Trier was the successor to Bishop Maximinus and was buried in his church.",type:"family/ecclesiastical"},
+  {source:"GCC-081",target:"GCC-082",desc:"Bishop Agricola transferred the body of the priest Desideratus.",type:"translation"},
+  {source:"GCC-084",target:"GCC-085",desc:"Ragnimodus was cured of fever at the tomb of Marcellus.",type:"miracle"},
+  {source:"GCC-088",target:"GCC-089",desc:"Nicetius of Trier was the successor to Bishop Maximinus.",type:"family/ecclesiastical"},
   {source:"GCC-090",target:"GCC-016",desc:"Gregory personally possessed the staff of Bishop Medard as a relic.",type:"translation"},
   {source:"GCC-101",target:"GCC-102",desc:"Agnes served as the abbess in the convent founded by Queen Radegund.",type:"family/ecclesiastical"},
   {source:"GCC-101",target:"GCC-103",desc:"Maroveus was the Bishop of Poitiers during Radegund\u2019s life and death.",type:"family/ecclesiastical"},
   {source:"GCC-101",target:"GCC-016",desc:"Gregory presided over Radegund\u2019s funeral and blessed her altar.",type:"translation"},
-  {source:"GCC-102",target:"GCC-016",desc:"Abbess Agnes consulted with Gregory regarding the funeral and burial of Radegund.",type:"family/ecclesiastical"}
+  {source:"GCC-102",target:"GCC-016",desc:"Abbess Agnes consulted with Gregory regarding Radegund\u2019s funeral.",type:"family/ecclesiastical"}
 ];
 
-// ─── NON-OVERLAPPING LOCATION POSITIONS (force-separated) ───────────────
+// ─── COMPACT NON-OVERLAPPING POSITIONS ──────────────────────────────────
 const locationGeo = {
-  "Maastricht": {x: 3060, y: 165},
-  "Trier": {x: 2940, y: 420},
-  "Rheims": {x: 2340, y: 360},
-  "Soissons": {x: 2190, y: 270},
-  "Paris": {x: 1980, y: 630},
-  "Ch\u00e2lons": {x: 2460, y: 570},
-  "Rennes": {x: 840, y: 660},
-  "Le Mans": {x: 1254, y: 791},
-  "Troyes": {x: 2430, y: 780},
-  "Nantes": {x: 693, y: 1075},
-  "Rez\u00e9": {x: 627, y: 1205},
-  "Orl\u00e9ans": {x: 1740, y: 900},
-  "Angers": {x: 908, y: 978},
-  "Tours": {x: 1399, y: 1153},
-  "Luynes": {x: 1052, y: 973},
-  "Chinon": {x: 1047, y: 1375},
-  "Bourges": {x: 1877, y: 1214},
-  "Dijon": {x: 2773, y: 1017},
-  "Langres": {x: 2796, y: 798},
-  "Autun": {x: 2579, y: 1240},
-  "Chalon": {x: 2692, y: 1486},
-  "\u00c9vaux": {x: 1704, y: 1515},
-  "D\u00e9ols": {x: 1723, y: 1371},
-  "Poitiers": {x: 1184, y: 1603},
-  "Limoges": {x: 1462, y: 1752},
-  "Artonne": {x: 1696, y: 1661},
-  "Riom": {x: 1849, y: 1484},
-  "Clermont": {x: 2014, y: 1783},
-  "Brioude": {x: 2067, y: 2119},
-  "Saintes": {x: 870, y: 1680},
-  "Angoul\u00eame": {x: 1109, y: 1832},
-  "P\u00e9rigueux": {x: 1230, y: 1980},
-  "Bordeaux": {x: 824, y: 2061},
-  "Blaye": {x: 730, y: 1920},
-  "Lyon": {x: 2547, y: 1684},
-  "Saint-Justin": {x: 930, y: 2310},
-  "Tarbes": {x: 1020, y: 2520},
-  "Toulouse": {x: 1470, y: 2430},
-  "Saint-Lizier": {x: 1260, y: 2610},
-  "Embrun": {x: 2940, y: 1920},
-  "Die": {x: 2730, y: 1890},
-  "Riez": {x: 2908, y: 2095},
-  "Nice": {x: 3180, y: 2070},
-  "Aix-en-Provence": {x: 2971, y: 2253},
-  "Auxerre": {x: 2340, y: 990},
-  "Vercelli": {x: 3450, y: 1500},
-  "Nola": {x: 3600, y: 2100},
-  "Antioch": {x: 3900, y: 1050},
+  "Maastricht": {x: 1836, y: 99},
+  "Trier": {x: 1764, y: 252},
+  "Rheims": {x: 1404, y: 216},
+  "Soissons": {x: 1314, y: 162},
+  "Paris": {x: 1188, y: 378},
+  "Ch\u00e2lons": {x: 1476, y: 342},
+  "Rennes": {x: 504, y: 396},
+  "Le Mans": {x: 756, y: 485},
+  "Troyes": {x: 1458, y: 468},
+  "Nantes": {x: 415, y: 646},
+  "Rez\u00e9": {x: 377, y: 722},
+  "Orl\u00e9ans": {x: 1044, y: 540},
+  "Angers": {x: 554, y: 586},
+  "Tours": {x: 838, y: 694},
+  "Luynes": {x: 639, y: 594},
+  "Chinon": {x: 636, y: 822},
+  "Bourges": {x: 1122, y: 734},
+  "Dijon": {x: 1663, y: 610},
+  "Langres": {x: 1677, y: 481},
+  "Autun": {x: 1549, y: 745},
+  "Chalon": {x: 1613, y: 891},
+  "\u00c9vaux": {x: 1026, y: 902},
+  "D\u00e9ols": {x: 1022, y: 818},
+  "Poitiers": {x: 713, y: 957},
+  "Limoges": {x: 875, y: 1051},
+  "Artonne": {x: 1032, y: 987},
+  "Riom": {x: 1111, y: 902},
+  "Clermont": {x: 1205, y: 1069},
+  "Brioude": {x: 1239, y: 1259},
+  "Saintes": {x: 522, y: 1008},
+  "Angoul\u00eame": {x: 666, y: 1098},
+  "P\u00e9rigueux": {x: 738, y: 1188},
+  "Bordeaux": {x: 494, y: 1236},
+  "Blaye": {x: 438, y: 1152},
+  "Lyon": {x: 1529, y: 1009},
+  "Saint-Justin": {x: 558, y: 1386},
+  "Tarbes": {x: 612, y: 1512},
+  "Toulouse": {x: 882, y: 1458},
+  "Saint-Lizier": {x: 756, y: 1566},
+  "Embrun": {x: 1764, y: 1152},
+  "Die": {x: 1638, y: 1134},
+  "Riez": {x: 1745, y: 1258},
+  "Nice": {x: 1908, y: 1242},
+  "Aix-en-Provence": {x: 1783, y: 1351},
+  "Auxerre": {x: 1404, y: 594},
+  "Vercelli": {x: 2070, y: 900},
+  "Nola": {x: 2160, y: 1260},
+  "Antioch": {x: 2340, y: 630},
 };
 
-// ─── BUILD LOCATION GROUPS ──────────────────────────────────────────────
 const locationMap = {};
-characters.forEach(c => {
-  if (!locationMap[c.location]) locationMap[c.location] = [];
-  locationMap[c.location].push(c);
-});
+characters.forEach(c => { if (!locationMap[c.location]) locationMap[c.location] = []; locationMap[c.location].push(c); });
 
 function getLocationRadius(loc) {
   const count = locationMap[loc].length;
-  if (loc === "Tours") return 300;
-  if (loc === "Clermont") return 250;
-  if (count <= 1) return 55;
-  if (count <= 2) return 80;
-  if (count <= 3) return 105;
-  if (count <= 4) return 130;
-  if (count <= 5) return 150;
-  return 120 + count * 18;
+  if (loc === "Tours") return 170;
+  if (loc === "Clermont") return 140;
+  if (count <= 1) return 32;
+  if (count <= 2) return 48;
+  if (count <= 3) return 62;
+  if (count <= 4) return 78;
+  if (count <= 5) return 88;
+  return 70 + count * 10;
 }
 
 function distributeNodes(chars, cx, cy, radius) {
   const n = chars.length;
   if (n === 1) { chars[0].x = cx; chars[0].y = cy; return; }
-  const minSep = 60;
+  const minSep = 36;
   if (n <= 6) {
-    const ringR = Math.min(radius * 0.55, radius - 30);
+    const ringR = Math.min(radius * 0.55, radius - 18);
     chars.forEach((c, i) => {
       const angle = (2 * Math.PI * i) / n - Math.PI / 2;
       c.x = cx + ringR * Math.cos(angle);
@@ -369,7 +305,7 @@ function distributeNodes(chars, cx, cy, radius) {
   } else {
     const innerCount = Math.max(1, Math.floor(n / 3));
     const outerCount = n - innerCount;
-    const outerR = radius - 30;
+    const outerR = radius - 18;
     const innerRing = outerR * 0.45;
     chars.slice(0, innerCount).forEach((c, i) => {
       const angle = (2 * Math.PI * i) / innerCount - Math.PI / 2;
@@ -382,26 +318,24 @@ function distributeNodes(chars, cx, cy, radius) {
       c.y = cy + outerR * Math.sin(angle);
     });
   }
-  for (let iter = 0; iter < 50; iter++) {
+  for (let iter = 0; iter < 60; iter++) {
     let moved = false;
     for (let i = 0; i < n; i++) {
       for (let j = i + 1; j < n; j++) {
-        const dx = chars[j].x - chars[i].x;
-        const dy = chars[j].y - chars[i].y;
+        const dx = chars[j].x - chars[i].x, dy = chars[j].y - chars[i].y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < minSep && dist > 0) {
-          const overlap = (minSep - dist) / 2;
+          const o = (minSep - dist) / 2;
           const ux = dx / dist, uy = dy / dist;
-          chars[i].x -= ux * overlap; chars[i].y -= uy * overlap;
-          chars[j].x += ux * overlap; chars[j].y += uy * overlap;
+          chars[i].x -= ux * o; chars[i].y -= uy * o;
+          chars[j].x += ux * o; chars[j].y += uy * o;
           moved = true;
         }
       }
     }
     chars.forEach(c => {
-      const dx = c.x - cx, dy = c.y - cy;
-      const d = Math.sqrt(dx * dx + dy * dy);
-      const maxR = radius - 22;
+      const dx = c.x - cx, dy = c.y - cy, d = Math.sqrt(dx * dx + dy * dy);
+      const maxR = radius - 14;
       if (d > maxR) { c.x = cx + (dx / d) * maxR; c.y = cy + (dy / d) * maxR; }
     });
     if (!moved) break;
@@ -417,90 +351,80 @@ Object.keys(locationMap).forEach(loc => {
 const charById = {};
 characters.forEach(c => charById[c.id] = c);
 
-const saintColor = "#c9a96e";
-const nonSaintColor = "#6a8caf";
+const saintColor = "#c9a96e", nonSaintColor = "#6a8caf";
 const connColors = { "family/ecclesiastical": "#b08040", "translation": "#d4a0d4", "miracle": "#50b8a0" };
 
-// ─── RENDER ─────────────────────────────────────────────────────────────
 const svg = d3.select("#graph");
 const tooltip = d3.select("#tooltip");
 const g = svg.append("g");
 
-const zoom = d3.zoom().scaleExtent([0.08, 3]).on("zoom", (e) => g.attr("transform", e.transform));
+const zoom = d3.zoom().scaleExtent([0.2, 4]).on("zoom", (e) => g.attr("transform", e.transform));
 svg.call(zoom);
-const initTransform = d3.zoomIdentity.translate(-100, -20).scale(0.38);
+const initTransform = d3.zoomIdentity.translate(10, 10).scale(0.62);
 svg.call(zoom.transform, initTransform);
 
 let selectedNodeId = null;
 
-// ─── LOCATION CIRCLES ───────────────────────────────────────────────────
+// Location circles
 const locData = Object.keys(locationMap).map(loc => ({
   loc, x: locationGeo[loc]?.x || 0, y: locationGeo[loc]?.y || 0,
   r: getLocationRadius(loc), count: locationMap[loc].length
 }));
 
-const locGroups = g.selectAll(".loc-group").data(locData).enter().append("g").attr("class", "loc-group");
+const locGroups = g.selectAll(".loc-group").data(locData).enter().append("g");
 
 locGroups.each(function(d) {
   const el = d3.select(this);
   if (d.count > 3) {
     el.append("circle").attr("cx", d.x).attr("cy", d.y).attr("r", d.r)
-      .attr("fill", "rgba(201,169,110,0.04)")
-      .attr("stroke", "rgba(201,169,110,0.22)").attr("stroke-width", 1.5).attr("stroke-dasharray", "6,4");
+      .attr("fill", "rgba(201,169,110,0.08)")
+      .attr("stroke", "rgba(240,200,80,0.55)").attr("stroke-width", 1.8).attr("stroke-dasharray", "6,3");
   } else if (d.count > 1) {
     el.append("circle").attr("cx", d.x).attr("cy", d.y).attr("r", d.r)
-      .attr("fill", "rgba(201,169,110,0.025)")
-      .attr("stroke", "rgba(201,169,110,0.12)").attr("stroke-width", 1).attr("stroke-dasharray", "4,4");
+      .attr("fill", "rgba(201,169,110,0.05)")
+      .attr("stroke", "rgba(240,200,80,0.4)").attr("stroke-width", 1.4).attr("stroke-dasharray", "5,3");
+  } else if (d.count === 1) {
+    el.append("circle").attr("cx", d.x).attr("cy", d.y).attr("r", d.r)
+      .attr("fill", "rgba(201,169,110,0.03)")
+      .attr("stroke", "rgba(240,200,80,0.25)").attr("stroke-width", 1).attr("stroke-dasharray", "4,3");
   }
-
-  // Location label - bright, high-contrast, always readable
-  const labelY = d.count === 1 ? d.y + d.r + 22 : d.y - d.r + 18;
-  el.append("text")
-    .attr("x", d.x).attr("y", labelY)
-    .attr("text-anchor", "middle")
+  const labelY = d.count === 1 ? d.y + d.r + 14 : d.y - d.r + 12;
+  el.append("text").attr("x", d.x).attr("y", labelY).attr("text-anchor", "middle")
     .attr("fill", "#f0c850")
     .attr("font-family", "'Cinzel', serif")
-    .attr("font-size", d.count > 5 ? "17px" : d.count > 2 ? "14px" : "12px")
-    .attr("font-weight", "700")
-    .attr("letter-spacing", "2px")
-    .attr("paint-order", "stroke")
-    .attr("stroke", "#0a0a10")
-    .attr("stroke-width", 5)
-    .attr("stroke-linejoin", "round")
+    .attr("font-size", d.count > 5 ? "11px" : d.count > 2 ? "9.5px" : "8.5px")
+    .attr("font-weight", "700").attr("letter-spacing", "1.5px")
+    .attr("paint-order", "stroke").attr("stroke", "#0a0a10").attr("stroke-width", 3).attr("stroke-linejoin", "round")
     .text(d.loc.toUpperCase());
 });
 
-// ─── EDGES ──────────────────────────────────────────────────────────────
-const edgeGroup = g.append("g").attr("class", "edges");
-const edgeElements = edgeGroup.selectAll(".edge").data(connections).enter().append("line")
-  .attr("class", "edge")
+// Edges
+const edgeGroup = g.append("g");
+const edgeElements = edgeGroup.selectAll("line").data(connections).enter().append("line")
   .attr("x1", d => charById[d.source]?.x || 0).attr("y1", d => charById[d.source]?.y || 0)
   .attr("x2", d => charById[d.target]?.x || 0).attr("y2", d => charById[d.target]?.y || 0)
   .attr("stroke", d => connColors[d.type] || "#666")
-  .attr("stroke-width", 1.8).attr("stroke-opacity", 0.35).attr("cursor", "pointer")
+  .attr("stroke-width", 1.2).attr("stroke-opacity", 0.3).attr("cursor", "pointer")
   .on("mouseenter", function(event, d) {
-    if (!selectedNodeId) d3.select(this).attr("stroke-opacity", 0.9).attr("stroke-width", 3);
-    else d3.select(this).attr("stroke-width", 3);
+    if (!selectedNodeId) d3.select(this).attr("stroke-opacity", 0.9).attr("stroke-width", 2.5);
+    else d3.select(this).attr("stroke-width", 2.5);
     showEdgeTooltip(event, d);
   })
   .on("mousemove", (event) => moveTooltip(event))
   .on("mouseleave", function(event, d) {
-    if (!selectedNodeId) { d3.select(this).attr("stroke-opacity", 0.35).attr("stroke-width", 1.8); }
+    if (!selectedNodeId) { d3.select(this).attr("stroke-opacity", 0.3).attr("stroke-width", 1.2); }
     else {
       const sel = d.source === selectedNodeId || d.target === selectedNodeId;
-      d3.select(this).attr("stroke-opacity", sel ? 0.9 : 0.06).attr("stroke-width", sel ? 3 : 1.8);
+      d3.select(this).attr("stroke-opacity", sel ? 0.9 : 0.06).attr("stroke-width", sel ? 2.5 : 1.2);
     }
     hideTooltip();
   });
 
-// ─── NODES ──────────────────────────────────────────────────────────────
-const nodeGroup = g.append("g").attr("class", "nodes");
-const nodeElements = nodeGroup.selectAll(".node").data(characters).enter().append("g")
-  .attr("class", "node").attr("transform", d => `translate(${d.x},${d.y})`).attr("cursor", "pointer")
-  .on("mouseenter", function(event, d) {
-    showNodeTooltip(event, d);
-    if (!selectedNodeId) highlightConnections(d.id);
-  })
+// Nodes
+const nodeGroup = g.append("g");
+const nodeElements = nodeGroup.selectAll("g").data(characters).enter().append("g")
+  .attr("transform", d => `translate(${d.x},${d.y})`).attr("cursor", "pointer")
+  .on("mouseenter", function(event, d) { showNodeTooltip(event, d); if (!selectedNodeId) highlightConnections(d.id); })
   .on("mousemove", (event) => moveTooltip(event))
   .on("mouseleave", function() { hideTooltip(); if (!selectedNodeId) clearHighlight(); })
   .on("click", function(event, d) {
@@ -509,16 +433,16 @@ const nodeElements = nodeGroup.selectAll(".node").data(characters).enter().appen
     else { selectedNodeId = d.id; highlightConnections(d.id); }
   });
 
-nodeElements.append("circle").attr("r", 10)
+nodeElements.append("circle").attr("r", 6)
   .attr("fill", d => d.saint === "Saint" ? saintColor : nonSaintColor)
   .attr("stroke", d => d.saint === "Saint" ? "#f0dca0" : "#8ab4d6")
-  .attr("stroke-width", 1.5).attr("opacity", 0.92);
+  .attr("stroke-width", 1).attr("opacity", 0.92);
 
-nodeElements.append("text").attr("dy", -16).attr("text-anchor", "middle")
+nodeElements.append("text").attr("dy", -10).attr("text-anchor", "middle")
   .attr("fill", "#e0d8cc").attr("font-family", "'EB Garamond', serif")
-  .attr("font-size", "11.5px").attr("font-weight", "500")
+  .attr("font-size", "9px").attr("font-weight", "500")
   .attr("paint-order", "stroke").attr("stroke", "#0f0f14")
-  .attr("stroke-width", 3).attr("stroke-linejoin", "round")
+  .attr("stroke-width", 2.5).attr("stroke-linejoin", "round")
   .text(d => d.name);
 
 svg.on("click", function() { if (selectedNodeId) { selectedNodeId = null; clearHighlight(); } });
@@ -526,14 +450,13 @@ svg.on("click", function() { if (selectedNodeId) { selectedNodeId = null; clearH
 function highlightConnections(nodeId) {
   const connected = new Set([nodeId]);
   connections.forEach(c => { if (c.source === nodeId) connected.add(c.target); if (c.target === nodeId) connected.add(c.source); });
-  edgeElements.attr("stroke-opacity", d => (d.source === nodeId || d.target === nodeId) ? 0.9 : 0.06)
-    .attr("stroke-width", d => (d.source === nodeId || d.target === nodeId) ? 3 : 1.8);
-  nodeElements.selectAll("circle").attr("opacity", d => connected.has(d.id) ? 1 : 0.15);
-  nodeElements.selectAll("text").attr("opacity", d => connected.has(d.id) ? 1 : 0.15);
+  edgeElements.attr("stroke-opacity", d => (d.source === nodeId || d.target === nodeId) ? 0.9 : 0.05)
+    .attr("stroke-width", d => (d.source === nodeId || d.target === nodeId) ? 2.5 : 1.2);
+  nodeElements.selectAll("circle").attr("opacity", d => connected.has(d.id) ? 1 : 0.12);
+  nodeElements.selectAll("text").attr("opacity", d => connected.has(d.id) ? 1 : 0.12);
 }
-
 function clearHighlight() {
-  edgeElements.attr("stroke-opacity", 0.35).attr("stroke-width", 1.8);
+  edgeElements.attr("stroke-opacity", 0.3).attr("stroke-width", 1.2);
   nodeElements.selectAll("circle").attr("opacity", 0.92);
   nodeElements.selectAll("text").attr("opacity", 1);
 }
@@ -543,7 +466,6 @@ function showNodeTooltip(event, d) {
   tooltip.html(`<div class="tt-name">${d.name}</div><div class="tt-status">${d.status} &middot; ${badge}</div><div class="tt-loc">\u25C9 ${d.location} &mdash; Ch. ${d.chapters}</div><div class="tt-desc">${d.desc}</div>`);
   tooltip.classed("visible", true); moveTooltip(event);
 }
-
 function showEdgeTooltip(event, d) {
   const c1 = charById[d.source], c2 = charById[d.target];
   const label = d.type.replace("/", " / ").replace(/\b\w/g, l => l.toUpperCase());
@@ -551,16 +473,13 @@ function showEdgeTooltip(event, d) {
   tooltip.html(`<div class="tt-name">${c1?.name} \u2194 ${c2?.name}</div><div class="tt-conn-type" style="background:${color}33;color:${color};border:1px solid ${color}66">${label}</div><div class="tt-desc">${d.desc}</div>`);
   tooltip.classed("visible", true); moveTooltip(event);
 }
-
 function moveTooltip(event) {
-  const t = tooltip.node(); const w = t.offsetWidth, h = t.offsetHeight;
-  let left = event.clientX + 16, top = event.clientY - 10;
-  if (left + w > window.innerWidth - 12) left = event.clientX - w - 16;
-  if (top + h > window.innerHeight - 12) top = window.innerHeight - h - 12;
-  if (top < 8) top = 8;
+  const t = tooltip.node(); let left = event.clientX + 14, top = event.clientY - 8;
+  if (left + t.offsetWidth > window.innerWidth - 10) left = event.clientX - t.offsetWidth - 14;
+  if (top + t.offsetHeight > window.innerHeight - 10) top = window.innerHeight - t.offsetHeight - 10;
+  if (top < 6) top = 6;
   tooltip.style("left", left + "px").style("top", top + "px");
 }
-
 function hideTooltip() { tooltip.classed("visible", false); }
 
 d3.select("#zoom-in").on("click", () => svg.transition().duration(300).call(zoom.scaleBy, 1.4));
