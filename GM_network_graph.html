@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glory of the Martyrs — Character Network</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap');
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #0d0f14;
+  color: #ccc;
+  font-family: 'Crimson Pro', Georgia, serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+#header {
+  position: fixed; top:0; left:0; right:0; z-index:100;
+  background: linear-gradient(180deg, rgba(13,15,20,0.97) 0%, rgba(13,15,20,0.7) 80%, transparent 100%);
+  padding: 14px 28px 22px;
+  pointer-events: none;
+}
+
+#header h1 {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 22px;
+  color: #c9a84c;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+#header p {
+  font-size: 13px;
+  color: #7a7568;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+  font-style: italic;
+}
+
+#legend {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 100;
+  background: rgba(13,15,20,0.92);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 8px;
+  padding: 14px 18px;
+  max-width: 220px;
+  backdrop-filter: blur(10px);
+}
+
+#legend h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  color: #c9a84c;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.legend-section { margin-bottom: 10px; }
+.legend-section:last-child { margin-bottom: 0; }
+
+.legend-label {
+  font-size: 10px;
+  color: #5a564d;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 4px;
+  font-family: 'Cinzel', serif;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-size: 12px;
+  color: #9a9588;
+}
+
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-line {
+  width: 18px; height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+#tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 200;
+  background: rgba(20,22,30,0.96);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 8px;
+  padding: 14px 18px;
+  max-width: 340px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+#tooltip.visible { opacity: 1; }
+
+#tooltip .tt-name {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: #c9a84c;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+#tooltip .tt-meta {
+  font-size: 12px;
+  color: #8a8578;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+#tooltip .tt-desc {
+  font-size: 13px;
+  color: #b0a998;
+  line-height: 1.5;
+}
+
+#tooltip .tt-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: 'Cinzel', serif;
+  margin-top: 2px;
+}
+
+svg { display: block; }
+
+.node-label {
+  font-family: 'Crimson Pro', serif;
+  font-size: 9px;
+  fill: #8a8578;
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: #0d0f14;
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.link {
+  fill: none;
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+.link:hover { opacity: 0.95; }
+
+.node-circle {
+  cursor: pointer;
+  stroke-width: 1.5;
+  transition: r 0.15s ease;
+}
+
+#controls {
+  position: fixed;
+  top: 68px;
+  right: 16px;
+  z-index: 100;
+  display: flex;
+  gap: 6px;
+}
+
+#controls button {
+  background: rgba(13,15,20,0.9);
+  border: 1px solid rgba(201,168,76,0.2);
+  color: #c9a84c;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+#controls button:hover {
+  background: rgba(201,168,76,0.1);
+  border-color: rgba(201,168,76,0.4);
+}
+
+#search-box {
+  position: fixed;
+  top: 68px;
+  left: 16px;
+  z-index: 100;
+}
+
+#search-box input {
+  background: rgba(13,15,20,0.9);
+  border: 1px solid rgba(201,168,76,0.2);
+  color: #b0a998;
+  font-family: 'Crimson Pro', serif;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 5px;
+  width: 200px;
+  outline: none;
+}
+
+#search-box input::placeholder { color: #4a4638; }
+#search-box input:focus { border-color: rgba(201,168,76,0.5); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Glory of the Martyrs</h1>
+  <p>Character relationships in Gregory of Tours' hagiographic work</p>
+</div>
+
+<div id="search-box">
+  <input type="text" id="search" placeholder="Search character...">
+</div>
+
+<div id="controls">
+  <button onclick="zoomIn()">+</button>
+  <button onclick="zoomOut()">−</button>
+  <button onclick="resetView()">Reset</button>
+</div>
+
+<div id="legend">
+  <h3>Legend</h3>
+  <div class="legend-section">
+    <div class="legend-label">Character Type</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#f0d060"></div>Divine</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e07040"></div>Apostle</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d94050"></div>Martyr</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#5090d0"></div>Bishop/Pope</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#50b8a0"></div>Clergy</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a070d0"></div>Royalty</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c0a060"></div>Holy Figure</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#708090"></div>Layperson</div>
+  </div>
+  <div class="legend-section">
+    <div class="legend-label">Connections</div>
+    <div class="legend-item"><div class="legend-line" style="background:#e8c050"></div>Family / Eccl.</div>
+    <div class="legend-item"><div class="legend-line" style="background:#e06060"></div>Miracle</div>
+    <div class="legend-item"><div class="legend-line" style="background:#50a8d0"></div>Translation</div>
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-name"></div>
+  <div class="tt-meta"></div>
+  <div class="tt-desc"></div>
+</div>
+
+<svg id="graph"></svg>
+
+<script>
+const graphData = {"nodes": [{"id": "GMC1", "name": "Georgius Florentius Gregorius", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "Preface, 6, 8, 10, 82, 86", "location": "Tours", "description": "The author, Bishop of Tours, and a primary witness/participant in relic cults.+1"}, {"id": "GMC2", "name": "Jerome", "status": "Priest / Teacher", "category": "Clergy", "isSaint": "Yes", "chapters": "Preface", "location": "Rome / Gaul", "description": "An important Church teacher whose vision regarding secular literature influenced Gregory.+1"}, {"id": "GMC3", "name": "Paul", "status": "Apostle", "category": "Apostle", "isSaint": "Yes", "chapters": "Preface, 27, 28, 82", "location": "Rome", "description": "Apostle of the Gentiles; martyred in Rome; a frequent figure of protection.+2"}, {"id": "GMC4", "name": "Jesus Christ", "status": "Lord / Savior", "category": "Divine", "isSaint": "Yes", "chapters": "1, 2, 3, 20, etc.", "location": "Jerusalem", "description": "The central figure whose life and suffering produced the primary relics (Cross, Nails).+1"}, {"id": "GMC5", "name": "Mary", "status": "Virgin / Mother", "category": "Divine", "isSaint": "Yes", "chapters": "1, 4, 8, 9, 10", "location": "Jerusalem", "description": "The Mother of God whose bodily assumption and relics are central to several chapters.+2"}, {"id": "GMC6", "name": "Peter", "status": "Apostle / Bishop", "category": "Apostle", "isSaint": "Yes", "chapters": "3, 27, 33, 82", "location": "Rome", "description": "The first Bishop of Rome; martyred by crucifixion with feet upwards.+1"}, {"id": "GMC7", "name": "John the Evangelist", "status": "Apostle", "category": "Apostle", "isSaint": "Yes", "chapters": "2, 29", "location": "Ephesus", "description": "Author of the Gospel of John; buried in Ephesus where his tomb produces manna.+1"}, {"id": "GMC8", "name": "Nathanael", "status": "Disciple", "category": "Holy Figure", "isSaint": "Yes", "chapters": "2", "location": "Galilee", "description": "A saint from Cana who acknowledged Christ as the Son of God."}, {"id": "GMC9", "name": "Simeon", "status": "Prophet", "category": "Holy Figure", "isSaint": "Yes", "chapters": "2, 26", "location": "Jerusalem", "description": "A righteous man who blessed the baby Jesus.+2"}, {"id": "GMC10", "name": "Michael", "status": "Archangel", "category": "Divine", "isSaint": "Yes", "chapters": "4, 9", "location": "Paradise", "description": "The archangel who received Mary's soul and was associated with her translation.+1"}, {"id": "GMC11", "name": "Helena", "status": "Empress", "category": "Royalty", "isSaint": "Yes", "chapters": "5, 7", "location": "Jerusalem", "description": "Mother of Constantine; found the True Cross and Christ's nails in Jerusalem.+2"}, {"id": "GMC12", "name": "Radegund", "status": "Queen / Nun", "category": "Royalty", "isSaint": "Yes", "chapters": "5, 6", "location": "Poitiers", "description": "Founder of a convent in Poitiers; requested and received relics of the True Cross.+1"}, {"id": "GMC13", "name": "Constantine", "status": "Emperor", "category": "Royalty", "isSaint": "No", "chapters": "5, 7, 8, 10", "location": "Constantinople", "description": "Builder of major churches (e.g., St. Mary in Jerusalem) and patron of early Christianity.+2"}, {"id": "GMC14", "name": "Agnes", "status": "Abbess", "category": "Clergy", "isSaint": "No", "chapters": "5, 6", "location": "Poitiers", "description": "The first abbess of Radegund\u2019s convent in Poitiers.+1"}, {"id": "GMC15", "name": "Futes (Photius)", "status": "Abbot", "category": "Clergy", "isSaint": "No", "chapters": "8", "location": "Jerusalem", "description": "An abbot in Jerusalem who entrusted holy relics and a robe to a traveler.+1"}, {"id": "GMC16", "name": "John the Baptist", "status": "Prophet / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "11, 13, 14, 15", "location": "Bazas / Tours", "description": "The forerunner of Christ; his relics (blood, thumb) performed many miracles.+2"}, {"id": "GMC17", "name": "Bishop of Bazas", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "12", "location": "Bazas", "description": "A bishop who prayed for liberation from the Huns, resulting in a miraculous gem.+1"}, {"id": "GMC18", "name": "Peter", "status": "Priest", "category": "Clergy", "isSaint": "No", "chapters": "12", "location": "Bazas", "description": "A priest of great merit who caught the miraculous crystalline drops on a paten."}, {"id": "GMC19", "name": "Gallic Woman (Tigris)", "status": "Petitioner", "category": "Layperson", "isSaint": "No", "chapters": "13", "location": "Maurienne", "description": "Spent three years praying at the tomb of John the Baptist to receive a thumb relic.+2"}, {"id": "GMC20", "name": "Three unnamed Bishops", "status": "Bishops", "category": "Bishop/Pope", "isSaint": "No", "chapters": "13", "location": "Maurienne", "description": "Bishops who sought and received drops of blood from the thumb of St. John.+1"}, {"id": "GMC21", "name": "Rufus", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "13", "location": "Turin", "description": "Bishop of Turin who initially refused to forcibly move John the Baptist's relic.+2"}, {"id": "GMC22", "name": "Archdeacon of Turin", "status": "Archdeacon", "category": "Clergy", "isSaint": "No", "chapters": "13", "location": "Turin", "description": "Attempted to steal the relic of John the Baptist and died three days later.+1"}, {"id": "GMC23", "name": "Joshua son of Nun", "status": "Biblical Figure", "category": "Holy Figure", "isSaint": "Yes", "chapters": "17", "location": "Jericho", "description": "Bathed in the hot springs of Levida; associated with miraculous wool trees.+1"}, {"id": "GMC24", "name": "Johannes", "status": "Deacon", "category": "Clergy", "isSaint": "No", "chapters": "3, 18, 87", "location": "Jerusalem / Tours", "description": "Gregory's deacon who traveled to the East and provided accounts of miracles.+2"}, {"id": "GMC25", "name": "Ommatius", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "19", "location": "Tours", "description": "Bishop who helped build the church of St. Mary and St. John in Tours."}, {"id": "GMC26", "name": "Injuriosus", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "19", "location": "Tours", "description": "Bishop involved in the construction of the church of St. Mary and St. John."}, {"id": "GMC27", "name": "Eufronius", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "19", "location": "Tours", "description": "Bishop who restored the church of St. Mary and St. John after a fire."}, {"id": "GMC28", "name": "Eusebius of Caesarea", "status": "Bishop / Historian", "category": "Bishop/Pope", "isSaint": "No", "chapters": "20", "location": "Caesarea", "description": "An early Church historian whose writings were used by Gregory.+1"}, {"id": "GMC29", "name": "Basileus", "status": "Priest", "category": "Clergy", "isSaint": "No", "chapters": "22", "location": "Narbonne", "description": "Received a vision from Christ demanding he cover a \"naked\" crucifix with a curtain.+1"}, {"id": "GMC30", "name": "Bishop of Narbonne", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "22", "location": "Narbonne", "description": "Ordered the curtain hung over the crucifix following Basileus' vision."}, {"id": "GMC31", "name": "Rusticius", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "22", "location": "Narbonne", "description": "Mid-fifth-century builder of the cathedral at Narbonne."}, {"id": "GMC32", "name": "Stephen", "status": "Deacon / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "24, 33, 34", "location": "Jerusalem", "description": "The first martyr; his relics and appearances (e.g., in Bordeaux) are widely cited.+2"}, {"id": "GMC33", "name": "James the Apostle", "status": "Apostle / Bishop", "category": "Apostle", "isSaint": "Yes", "chapters": "26", "location": "Jerusalem", "description": "Known as the \"brother of the Lord\"; the first Bishop of Jerusalem.+1"}, {"id": "GMC34", "name": "Zacharias", "status": "Priest / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "26", "location": "Jerusalem", "description": "Father of John the Baptist; buried with the Apostle James.+1"}, {"id": "GMC35", "name": "Mary Magdalene", "status": "Disciple", "category": "Holy Figure", "isSaint": "Yes", "chapters": "29", "location": "Ephesus", "description": "A companion of Christ buried in Ephesus without a building over her tomb."}, {"id": "GMC36", "name": "Seven Sleepers", "status": "Martyrs", "category": "Martyr", "isSaint": "Yes", "chapters": "29, 94", "location": "Ephesus", "description": "Seven men who slept for centuries in a cave to escape Decius' persecution.+1"}, {"id": "GMC37", "name": "Andrew", "status": "Apostle", "category": "Apostle", "isSaint": "Yes", "chapters": "30, 78", "location": "Patras", "description": "Apostle whose tomb in Patras produces fragrant oil and manna.+2"}, {"id": "GMC38", "name": "Man from Tours", "status": "Relic Transfer", "category": "Layperson", "isSaint": "No", "chapters": "30", "location": "Neuvy-le-Roi", "description": "Rescued relics of Andrew and Saturninus from a burning church in Burgundy.+1"}, {"id": "GMC39", "name": "Guiltless Young Girl", "status": "Relic Transfer", "category": "Layperson", "isSaint": "No", "chapters": "30", "location": "Neuvy-le-Roi", "description": "Chosen to carry the relics of Andrew to Tours because the rescuer became paralyzed."}, {"id": "GMC40", "name": "Son of the Rescuer", "status": "Builder", "category": "Layperson", "isSaint": "No", "chapters": "30", "location": "Neuvy-le-Roi", "description": "Built a new church in honor of the martyrs after being cured of a fever."}, {"id": "GMC41", "name": "Bishop of Patras", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "30", "location": "Patras", "description": "Advised the suffering Mummolus to seek healing from St. Andrew."}, {"id": "GMC42", "name": "Thomas", "status": "Apostle", "category": "Apostle", "isSaint": "Yes", "chapters": "31, 32", "location": "India / Edessa", "description": "Apostle martyred in India; his body was later moved to Edessa."}, {"id": "GMC43", "name": "Ursinus", "status": "Saint", "category": "Holy Figure", "isSaint": "Yes", "chapters": "35", "location": "Bourges", "description": "A disciple of early missionaries credited with bringing Christianity to Bourges."}, {"id": "GMC44", "name": "Felix", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "35", "location": "Bourges", "description": "Bishop of Bourges during whose reign the power of St. Stephen's relics was revealed.+1"}, {"id": "GMC45", "name": "Leucadius", "status": "Builder", "category": "Layperson", "isSaint": "No", "chapters": "35", "location": "Bourges", "description": "A leading citizen of Bourges who offered his house as the first church."}, {"id": "GMC46", "name": "Bertramn", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "36, 96", "location": "Bordeaux", "description": "Contemporary of Gregory; witnessed and shared the account of St. Stephen's miracle.+1"}, {"id": "GMC47", "name": "Bartholomew", "status": "Apostle", "category": "Apostle", "isSaint": "Yes", "chapters": "37", "location": "Lipari", "description": "Apostle whose sarcophagus floated miraculously to the island of Lipari.+1"}, {"id": "GMC48", "name": "Clement", "status": "Pope / Bishop", "category": "Bishop/Pope", "isSaint": "Yes", "chapters": "38, 39, 55", "location": "Rome", "description": "An early Bishop of Rome whose relics restored a spring in Limoges.+3"}, {"id": "GMC49", "name": "Aredius", "status": "Priest / Abbot", "category": "Clergy", "isSaint": "Yes", "chapters": "39, 41", "location": "Limoges", "description": "A holy man who used relics of St. Clement to restore a dried-up spring.+2"}, {"id": "GMC50", "name": "Chrysanthus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "40, 82", "location": "Rome", "description": "Martyr buried in a crypt in Rome; his relics were later sent to Gregory.+2"}, {"id": "GMC51", "name": "Daria", "status": "Virgin / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "40, 82", "location": "Rome", "description": "Martyred with Chrysanthus; her tomb is a site of many healings.+2"}, {"id": "GMC52", "name": "Damasus", "status": "Pope / Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "40", "location": "Rome", "description": "Bishop of Rome who enclosed the window of Chrysanthus' tomb with verses.+1"}, {"id": "GMC53", "name": "Pancratius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "41, 82", "location": "Rome", "description": "A powerful avenger against perjurers buried near the walls of Rome.+2"}, {"id": "GMC54", "name": "John", "status": "Pope / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "42", "location": "Ravenna", "description": "Bishop of Rome who died in prison after being persecuted by King Theodoric.+1"}, {"id": "GMC55", "name": "Laurentius", "status": "Deacon / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "44, 48, 82", "location": "Rome", "description": "Martyred by fire; his relics (and even a splinter from his church beam) heal the ill.+3"}, {"id": "GMC56", "name": "Fortunatus", "status": "Bishop / Poet", "category": "Bishop/Pope", "isSaint": "No", "chapters": "44", "location": "Poitiers", "description": "A contemporary of Gregory who wrote verses about St. Laurentius.+1"}, {"id": "GMC57", "name": "Cassianus", "status": "Martyr / Teacher", "category": "Martyr", "isSaint": "Yes", "chapters": "45", "location": "Italy", "description": "A teacher martyred by his own students using wax tablets and pens."}, {"id": "GMC58", "name": "Agricola", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "46, 49", "location": "Bologna", "description": "Martyred by crucifixion; his relics were sought by Bishop Namatius.+1"}, {"id": "GMC59", "name": "Vitalis", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "46, 49", "location": "Bologna", "description": "Martyred alongside Agricola; his tomb also performed miracles.+1"}, {"id": "GMC60", "name": "Namatius", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "46", "location": "Clermont", "description": "Mid-fifth-century bishop who built the cathedral in Clermont and imported relics.+1"}, {"id": "GMC61", "name": "Victor", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "47", "location": "Milan", "description": "A martyr known for releasing captives from prison.+1"}, {"id": "GMC62", "name": "Apollinaris", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "47, 64", "location": "Clermont", "description": "Son of Sidonius; became bishop of Clermont after returning from exile in Italy.+1"}, {"id": "GMC63", "name": "Bishop of Milan", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "48", "location": "Milan", "description": "Celebrated a festival for St. Laurentius after a crystal chalice was miraculously repaired."}, {"id": "GMC64", "name": "Gervasius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "49", "location": "Milan", "description": "Discovered by St. Ambrose; his blood relics were scattered throughout Gaul.+1"}, {"id": "GMC65", "name": "Protasius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "49", "location": "Milan", "description": "Martyred with Gervasius; found by Ambrose and venerated in Tours.+1"}, {"id": "GMC66", "name": "Ambrose", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "Yes", "chapters": "49", "location": "Milan", "description": "Bishop of Milan who found the bodies of Gervasius and Protasius.+1"}, {"id": "GMC67", "name": "Martin", "status": "Bishop / Saint", "category": "Bishop/Pope", "isSaint": "Yes", "chapters": "49, 50, 82", "location": "Tours", "description": "Patron saint of Tours; received relics from Ambrose and appeared in visions.+3"}, {"id": "GMC68", "name": "Paulinus of Nola", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "Yes", "chapters": "49, 103", "location": "Nola", "description": "A Gallic aristocrat turned bishop; recorded the miracles of St. Felix.+2"}, {"id": "GMC69", "name": "Eustochius", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "49, 58", "location": "Tours", "description": "Bishop who dedicated churches with relics of Milanese saints and built at Yzeures.+1"}, {"id": "GMC70", "name": "Nazarius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "50, 60", "location": "Embrun / Nantes", "description": "Martyred at Embrun; his relics punished Britto for stealing from the altar.+2"}, {"id": "GMC71", "name": "Celsus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "50", "location": "Embrun", "description": "A young boy martyred with Nazarius; his relics were imported from Italy.+1"}, {"id": "GMC72", "name": "Genesius of Arles", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "50, 66, 67", "location": "Arles", "description": "A notary martyred by beheading; his cult is among the most famous in Gaul.+2"}, {"id": "GMC73", "name": "Saturninus", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "51, 65", "location": "Toulouse", "description": "One of the seven missionaries to Gaul; dragged to death by a bull.+1"}, {"id": "GMC74", "name": "Monks of Saturninus", "status": "Relic Transfer", "category": "Layperson", "isSaint": "No", "chapters": "51", "location": "Brioude", "description": "Transported Saturninus' relics, which sanctified a poor man's cottage."}, {"id": "GMC75", "name": "Poor Man (Vialle)", "status": "Builder", "category": "Layperson", "isSaint": "No", "chapters": "51", "location": "Brioude", "description": "Built a wooden oratory for Saturninus after falling into poverty for ignoring a vision.+1"}, {"id": "GMC76", "name": "Sigismund", "status": "King / Saint", "category": "Royalty", "isSaint": "Yes", "chapters": "74", "location": "Burgundy", "description": "King of the Burgundians who performed penance at Agaune; his mass heals fevers.+2"}, {"id": "GMC77", "name": "Mauricius (Maurice)", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "75", "location": "Agaune", "description": "Leader of the Theban Legion; appeared in a vision to a mourning mother.+2"}, {"id": "GMC78", "name": "Photinus", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "53, 54", "location": "Lyon", "description": "The first Bishop of Lyon; died in prison during the persecution of 177.+1"}, {"id": "GMC79", "name": "Blandina", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "53", "location": "Lyon", "description": "A famous martyr of Lyon who was condemned to the wild beasts."}, {"id": "GMC80", "name": "Irenaeus", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "54", "location": "Lyon", "description": "Succeeded Photinus; his tomb in a crypt is a place of great brightness.+1"}, {"id": "GMC81", "name": "Epipodius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "54", "location": "Lyon", "description": "Martyred at Lyon; buried near Irenaeus in a church crypt.+1"}, {"id": "GMC82", "name": "Alexander", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "54", "location": "Lyon", "description": "Martyred at Lyon alongside Epipodius.+1"}, {"id": "GMC83", "name": "Benignus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "55", "location": "Dijon", "description": "A martyr whose large sarcophagus was miraculously moved by Bishop Gregorius.+1"}, {"id": "GMC84", "name": "Gregorius", "status": "Bishop / Builder", "category": "Bishop/Pope", "isSaint": "No", "chapters": "55", "location": "Langres / Dijon", "description": "Gregory\u2019s great-grandfather; built a large church and crypt for St. Benignus.+2"}, {"id": "GMC85", "name": "Paschasia", "status": "Nun / Saint", "category": "Holy Figure", "isSaint": "Yes", "chapters": "55", "location": "Dijon", "description": "An ancient nun whose glorious face appeared to the builders of Benignus' church.+1"}, {"id": "GMC86", "name": "Tetricus", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "55", "location": "Langres", "description": "Son of Bishop Gregorius and Gregory\u2019s great-uncle."}, {"id": "GMC87", "name": "Gallus", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "50", "location": "Clermont", "description": "Gregory\u2019s uncle who repulsed the plague of 543 with his prayers.+1"}, {"id": "GMC88", "name": "Symphorianus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "51", "location": "Autun", "description": "Martyred at Autun; his blood-stained stones were preserved in Thiers.+1"}, {"id": "GMC89", "name": "Monk (Thiers)", "status": "Relic Transfer", "category": "Layperson", "isSaint": "No", "chapters": "51", "location": "Thiers", "description": "Collected blood-stained stones from Symphorianus' execution site."}, {"id": "GMC90", "name": "Marcellus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "52, 53", "location": "Chalon", "description": "A martyr who paralyzed a man attempting to swear a false oath.+1"}, {"id": "GMC91", "name": "Eunomius", "status": "Priest", "category": "Clergy", "isSaint": "No", "chapters": "52", "location": "Clermont", "description": "Former priest whose son, Fedamius, witnessed miracles at Chalon."}, {"id": "GMC92", "name": "Valerianus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "53", "location": "Tournus", "description": "Related to Marcellus; his tomb healed a count who promised to repair the church.+1"}, {"id": "GMC93", "name": "Epyrechius", "status": "Priest", "category": "Clergy", "isSaint": "No", "chapters": "53", "location": "Tournus", "description": "A virtuous priest in charge of the church of St. Valerianus."}, {"id": "GMC94", "name": "Timotheus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "54", "location": "Rheims", "description": "Martyred in Rome but venerated at Rheims; his relics weighed down a priest.+1"}, {"id": "GMC95", "name": "Apollinaris", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "54", "location": "Rheims", "description": "First Bishop of Ravenna; his relics were also venerated at Rheims.+1"}, {"id": "GMC96", "name": "Eutropis", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "55", "location": "Saintes", "description": "Sent to Gaul by St. Clement; his martyrdom was revealed via a vision of his scar.+1"}, {"id": "GMC97", "name": "Palladius", "status": "Bishop / Builder", "category": "Bishop/Pope", "isSaint": "No", "chapters": "55", "location": "Saintes", "description": "Gregory\u2019s contemporary; built a new church for St. Eutropis.+1"}, {"id": "GMC98", "name": "Amarandus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "56", "location": "Albi", "description": "His tomb was miraculously lit by a heavenly torch when human efforts failed.+1"}, {"id": "GMC99", "name": "Eugenius", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "57", "location": "Albi", "description": "Bishop of Carthage who died in exile; he punishes greed at his tomb.+1"}, {"id": "GMC100", "name": "Rogatianus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "59", "location": "Nantes", "description": "Martyred with Donatus; appeared as a man in white during a siege.+1"}, {"id": "GMC101", "name": "Donatus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "59", "location": "Nantes", "description": "Martyred alongside Rogatianus for the name of Christ.+1"}, {"id": "GMC102", "name": "Similinus", "status": "Bishop / Saint", "category": "Bishop/Pope", "isSaint": "Yes", "chapters": "59", "location": "Nantes", "description": "A fourth-century confessor-bishop whose spirit helped save Nantes from siege.+1"}, {"id": "GMC103", "name": "Johannes", "status": "Archdeacon", "category": "Clergy", "isSaint": "No", "chapters": "60", "location": "N\u00eemes", "description": "Pious archdeacon who was wrongly arrested and later became bishop.+1"}, {"id": "GMC104", "name": "Eberigisilus", "status": "Bishop / Builder", "category": "Bishop/Pope", "isSaint": "No", "chapters": "61, 62", "location": "Cologne", "description": "Bishop who built a church for St. Mallosus and found his body via a vision.+1"}, {"id": "GMC105", "name": "Mallosus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "62", "location": "Birten", "description": "A member of the Theban Legion whose body was found by Eberigisilus.+1"}, {"id": "GMC106", "name": "Patroclus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "63", "location": "Troyes", "description": "His martyrdom account was once dismissed as a forgery by a bishop.+1"}, {"id": "GMC107", "name": "Antolianus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "64", "location": "Clermont", "description": "A third-century martyr whose church construction was completed with difficulty.+2"}, {"id": "GMC108", "name": "Alcima", "status": "Builder", "category": "Layperson", "isSaint": "No", "chapters": "64", "location": "Clermont", "description": "Sister of Bishop Apollinaris; initiated construction of St. Antolianus.+1"}, {"id": "GMC109", "name": "Placidina", "status": "Builder", "category": "Layperson", "isSaint": "No", "chapters": "64", "location": "Clermont", "description": "Wife of Bishop Apollinaris; co-builder of the church for St. Antolianus.+1"}, {"id": "GMC110", "name": "Avitus", "status": "Bishop / Builder", "category": "Bishop/Pope", "isSaint": "No", "chapters": "64, 66", "location": "Clermont", "description": "Bishop who rebuilt Antolianus\u2019 church and dedicated one for St. Genesius.+1"}, {"id": "GMC111", "name": "Julian", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "64", "location": "Brioude", "description": "A primary martyr of the Auvergne; Gregory wrote a separate book about him.+1"}, {"id": "GMC112", "name": "Genesius of Clermont", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "66", "location": "Thiers", "description": "Revealed his tomb to a poor man whose oxen were lost.+1"}, {"id": "GMC113", "name": "Ferreolus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "70", "location": "Besan\u00e7on", "description": "Martyred in the late second century; his tomb provided a healing sage leaf.+1"}, {"id": "GMC114", "name": "Ferrucio", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "70", "location": "Besan\u00e7on", "description": "Martyred with Ferreolus in a crypt in Besan\u00e7on.+1"}, {"id": "GMC115", "name": "Dionysius", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "71", "location": "Paris", "description": "One of the seven missionaries; his tomb shroud killed a thief.+1"}, {"id": "GMC116", "name": "Quintinus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "72", "location": "Saint-Quentin", "description": "Found by a blind nun; his power broke the chains of a man on the gallows.+1"}, {"id": "GMC117", "name": "Genesius of Tarbes", "status": "Priest / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "73", "location": "Tarbes", "description": "A saintly priest whose flowers miraculously bloom on his festival.+1"}, {"id": "GMC118", "name": "Guntramn", "status": "King", "category": "Royalty", "isSaint": "No", "chapters": "75, 104", "location": "Agaune", "description": "King who sent a priest to bring back relics from Agaune.+1"}, {"id": "GMC119", "name": "Victor of Marseilles", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "76", "location": "Marseilles", "description": "A martyr known for curing the possessed; his servant became an abbot.+1"}, {"id": "GMC120", "name": "Baudilius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "77", "location": "N\u00eemes", "description": "A martyr whose tomb laurel tree offers healing bark and leaves.+1"}, {"id": "GMC121", "name": "Leo", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "78", "location": "Agde", "description": "Defended church property against Count Gomacharius by extinguishing lights.+1"}, {"id": "GMC122", "name": "Jacincthus", "status": "Deacon", "category": "Clergy", "isSaint": "No", "chapters": "80", "location": "Ravenna", "description": "Plunged his hand into boiling water to prove the Catholic faith."}, {"id": "GMC123", "name": "Pelagius II", "status": "Pope / Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "82", "location": "Rome", "description": "Granted relics of martyrs to Gregory\u2019s deacon in Rome.+1"}, {"id": "GMC124", "name": "Agiulf", "status": "Deacon / Relic Transfer", "category": "Clergy", "isSaint": "No", "chapters": "82", "location": "Rome / Tours", "description": "Gregory's deacon who brought relics from Rome and was saved from a storm."}, {"id": "GMC125", "name": "Florentius", "status": "Relic Transfer", "category": "Layperson", "isSaint": "No", "chapters": "83", "location": "Clermont", "description": "Gregory\u2019s father; carried a reliquary that protected him on long journeys.+1"}, {"id": "GMC126", "name": "Armentaria", "status": "Relic Transfer", "category": "Layperson", "isSaint": "No", "chapters": "83, 85", "location": "Clermont", "description": "Gregory\u2019s mother; used the father's relics to extinguish a fire in a grain field.+1"}, {"id": "GMC127", "name": "Polycarp", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "85", "location": "Smyrna / Riom", "description": "Martyred in the second century; his festival in Riom exposed a sinful deacon.+1"}, {"id": "GMC128", "name": "Eparchius (Epachius)", "status": "Priest", "category": "Clergy", "isSaint": "No", "chapters": "86", "location": "Riom", "description": "A noble priest struck with epilepsy for drinking during Christmas vigils.+1"}, {"id": "GMC129", "name": "Ruricius", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "86", "location": "Limoges", "description": "Father of Eparchius and Bishop of Limoges."}, {"id": "GMC130", "name": "Vincentius", "status": "Deacon / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "88, 89", "location": "Spain / Paris", "description": "A Spanish deacon whose relics and tunic performed many wonders in Gaul.+1"}, {"id": "GMC131", "name": "Eulalia", "status": "Virgin / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "90", "location": "Merida", "description": "Martyred at Merida; her spirit entered heaven in the shape of a dove.+1"}, {"id": "GMC132", "name": "Felix of Gerona", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "91", "location": "Gerona", "description": "Spanish martyr whose relics blinded a man who lowered his church\u2019s height.+1"}, {"id": "GMC133", "name": "Emeterius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "92", "location": "Calahorra", "description": "Martyred at Calahorra; his ring was carried to heaven in a cloud.+1"}, {"id": "GMC134", "name": "Chelidonius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "92", "location": "Calahorra", "description": "Martyred with Emeterius; his handkerchief flew to heaven.+1"}, {"id": "GMC135", "name": "Cyprian", "status": "Bishop / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "93", "location": "Carthage", "description": "A theologian-bishop whose church features a miraculously built pulpit.+1"}, {"id": "GMC136", "name": "Sergius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "96", "location": "Syria / Tours", "description": "A martyr whose Syrian church protected chicken meat from being cooked.+1"}, {"id": "GMC137", "name": "Cosmas", "status": "Doctor / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "97", "location": "Syria / Tours", "description": "A twin and doctor who heals the sick without fees.+1"}, {"id": "GMC138", "name": "Damianus", "status": "Doctor / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "97", "location": "Syria / Tours", "description": "Brother of Cosmas; both were martyred and heal via visions.+1"}, {"id": "GMC139", "name": "Phocas", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "98", "location": "Syria", "description": "A martyr buried in Syria whose courtyard heals snakebite victims.+1"}, {"id": "GMC140", "name": "Domitius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "99", "location": "Syria", "description": "Martyred in the fourth century; known for healing hip pains.+1"}, {"id": "GMC141", "name": "Georgius", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "100", "location": "Palestine", "description": "A martyr whose relics were so heavy they could not be moved by couriers.+1"}, {"id": "GMC142", "name": "Isiodorus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "101", "location": "Chios", "description": "Buried on Chios; his church has a well that heals the possessed.+1"}, {"id": "GMC143", "name": "Polyeuctus", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "102", "location": "Constantinople", "description": "A martyr who punishes perjurers; his church was gilded by Juliana.+1"}, {"id": "GMC144", "name": "Juliana", "status": "Builder", "category": "Layperson", "isSaint": "No", "chapters": "102", "location": "Constantinople", "description": "A wealthy matron who gilded the ceiling of Polyeuctus' church.+1"}, {"id": "GMC145", "name": "Felix of Nola", "status": "Priest / Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "103", "location": "Nola", "description": "A priest whose entrance into a cave was hidden by a spider's web.+1"}, {"id": "GMC146", "name": "Maximus", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "103", "location": "Nola", "description": "An aged bishop who was saved from starvation by Felix.+1"}, {"id": "GMC147", "name": "Quintus", "status": "Bishop", "category": "Bishop/Pope", "isSaint": "No", "chapters": "103", "location": "Nola", "description": "Consecrated bishop after Felix declined the office."}, {"id": "GMC148", "name": "Vincentius of Agen", "status": "Martyr", "category": "Martyr", "isSaint": "Yes", "chapters": "104", "location": "Agen", "description": "A deacon whose church was desecrated by Gundovald\u2019s army.+1"}, {"id": "GMC149", "name": "Pannichius", "status": "Priest", "category": "Clergy", "isSaint": "No", "chapters": "106", "location": "Poitiers", "description": "A priest whose cup shattered at the sign of the cross to dispel a fly."}], "edges": [{"source": "GMC1", "target": "GMC126", "description": "Armentaria is the mother of Gregory of Tours.", "type": "family/ecclesiastical"}, {"source": "GMC1", "target": "GMC125", "description": "Florentius is the father of Gregory of Tours.", "type": "family/ecclesiastical"}, {"source": "GMC125", "target": "GMC126", "description": "Florentius and Armentaria were a married couple.", "type": "family/ecclesiastical"}, {"source": "GMC4", "target": "GMC5", "description": "Mary is the virgin mother of Jesus Christ.", "type": "family/ecclesiastical"}, {"source": "GMC4", "target": "GMC11", "description": "Empress Helena found the cross and nails belonging to Jesus Christ.", "type": "translation"}, {"source": "GMC11", "target": "GMC13", "description": "Helena is the mother of Emperor Constantine.", "type": "family/ecclesiastical"}, {"source": "GMC12", "target": "GMC14", "description": "Agnes served as the first abbess for Queen Radegund\u2019s convent.", "type": "family/ecclesiastical"}, {"source": "GMC1", "target": "GMC12", "description": "Gregory visited Radegund, where they witnessed a lamp miraculously overflow.", "type": "miracle"}, {"source": "GMC16", "target": "GMC19", "description": "Tigris prayed at the tomb of John the Baptist for three years to receive a relic.", "type": "miracle"}, {"source": "GMC17", "target": "GMC18", "description": "The Bishop of Bazas and Priest Peter collaborated during the miracle of the crystal drops.", "type": "miracle"}, {"source": "GMC21", "target": "GMC22", "description": "The Archdeacon attempted to steal a relic against the warnings of Bishop Rufus.", "type": "miracle"}, {"source": "GMC1", "target": "GMC24", "description": "Deacon Johannes provided Gregory with eye-witness accounts of eastern miracles.", "type": "translation"}, {"source": "GMC29", "target": "GMC30", "description": "Basileus reported his vision of a \"naked\" Christ to the Bishop of Narbonne.", "type": "miracle"}, {"source": "GMC33", "target": "GMC34", "description": "The Apostle James was buried in a tomb he built for Zacharias and Simeon.", "type": "translation"}, {"source": "GMC6", "target": "GMC3", "description": "Peter and Paul are linked as the primary apostles and bishops of Rome.", "type": "family/ecclesiastical"}, {"source": "GMC37", "target": "GMC38", "description": "A Man from Tours entered a fire to save the relics of St. Andrew.", "type": "miracle"}, {"source": "GMC44", "target": "GMC32", "description": "Bishop Felix of Bourges witnessed the power of St. Stephen's relics against a perjurer.", "type": "miracle"}, {"source": "GMC49", "target": "GMC48", "description": "Abbot Aredius used the relics of Clement to restore a dried-up spring.", "type": "miracle"}, {"source": "GMC50", "target": "GMC51", "description": "Chrysanthus and Daria were martyred together and share a burial crypt.", "type": "family/ecclesiastical"}, {"source": "GMC52", "target": "GMC50", "description": "Pope Damasus enclosed the tomb of Chrysanthus with his own verses.", "type": "translation"}, {"source": "GMC56", "target": "GMC55", "description": "The poet Fortunatus recorded the miracles of St. Laurentius in verse.", "type": "translation"}, {"source": "GMC60", "target": "GMC58", "description": "Bishop Namatius imported the relics of Agricola from Bologna.", "type": "translation"}, {"source": "GMC62", "target": "GMC61", "description": "Apollinaris was freed from exile after praying at the tomb of St. Victor.", "type": "miracle"}, {"source": "GMC66", "target": "GMC64", "description": "Bishop Ambrose discovered the hidden bodies of Gervasius and Protasius.", "type": "miracle"}, {"source": "GMC67", "target": "GMC64", "description": "Bishop Martin of Tours received blood relics of Gervasius and Protasius.", "type": "translation"}, {"source": "GMC68", "target": "GMC67", "description": "Paulinus of Nola corresponded with Martin regarding the Milanese relics.", "type": "translation"}, {"source": "GMC70", "target": "GMC71", "description": "Nazarius and Celsus were martyred together at Embrun.", "type": "family/ecclesiastical"}, {"source": "GMC62", "target": "GMC108", "description": "Alcima is the sister of Bishop Apollinaris.", "type": "family/ecclesiastical"}, {"source": "GMC62", "target": "GMC109", "description": "Placidina is the wife of Bishop Apollinaris.", "type": "family/ecclesiastical"}, {"source": "GMC80", "target": "GMC78", "description": "Bishop Irenaeus succeeded Photinus as the bishop of Lyon.", "type": "family/ecclesiastical"}, {"source": "GMC80", "target": "GMC81", "description": "Epipodius was buried next to Bishop Irenaeus in a Lyon crypt.", "type": "translation"}, {"source": "GMC84", "target": "GMC83", "description": "Bishop Gregorius built a church for St. Benignus after a direct revelation.", "type": "miracle"}, {"source": "GMC84", "target": "GMC85", "description": "The spirit of Paschasia appeared to encourage the builders of Bishop Gregorius.", "type": "miracle"}, {"source": "GMC126", "target": "GMC87", "description": "Bishop Gallus was the uncle of Gregory and relative of Armentaria.", "type": "family/ecclesiastical"}, {"source": "GMC97", "target": "GMC96", "description": "Bishop Palladius enshrined the newly discovered relics of Eutropis.", "type": "translation"}, {"source": "GMC99", "target": "GMC98", "description": "Bishop Eugenius chose to be buried in the crypt of St. Amarandus.", "type": "translation"}, {"source": "GMC100", "target": "GMC102", "description": "The spirits of Rogatianus and Bishop Similinus joined to save Nantes.", "type": "miracle"}, {"source": "GMC104", "target": "GMC105", "description": "Bishop Eberigisilus found the body of Mallosus via a deacon's vision.", "type": "miracle"}, {"source": "GMC110", "target": "GMC112", "description": "Bishop Avitus dedicated a church for St. Genesius of Clermont.", "type": "translation"}, {"source": "GMC76", "target": "GMC77", "description": "King Sigismund performed penance at the tomb of St. Mauricius.", "type": "miracle"}, {"source": "GMC118", "target": "GMC77", "description": "King Guntramn requested relics of Mauricius for his own protection.", "type": "translation"}, {"source": "GMC121", "target": "GMC37", "description": "Bishop Leo of Agde defended cathedral property holding relics of St. Andrew.", "type": "translation"}, {"source": "GMC123", "target": "GMC124", "description": "Pope Pelagius II granted Roman relics to Gregory\u2019s Deacon Agiulf.", "type": "translation"}, {"source": "GMC1", "target": "GMC127", "description": "Gregory and his mother witnessed a miracle at the festival of St. Polycarp.", "type": "miracle"}, {"source": "GMC128", "target": "GMC129", "description": "The priest Eparchius was the son of Bishop Ruricius.", "type": "family/ecclesiastical"}, {"source": "GMC144", "target": "GMC143", "description": "Juliana gilded the church of Polyeuctus to hide her wealth from the emperor.", "type": "family/ecclesiastical"}, {"source": "GMC145", "target": "GMC146", "description": "Felix saved the aged Bishop Maximus from starvation during a persecution.", "type": "miracle"}, {"source": "GMC145", "target": "GMC147", "description": "Quintus became bishop after St. Felix declined the position.", "type": "family/ecclesiastical"}, {"source": "GMC149", "target": "GMC4", "description": "Priest Pannichius invoked the cross of Jesus Christ to dispel a demonic fly.", "type": "miracle"}]};
+
+const categoryColors = {
+  'Divine': '#f0d060',
+  'Apostle': '#e07040',
+  'Martyr': '#d94050',
+  'Bishop/Pope': '#5090d0',
+  'Clergy': '#50b8a0',
+  'Royalty': '#a070d0',
+  'Holy Figure': '#c0a060',
+  'Layperson': '#708090',
+  'Other': '#666'
+};
+
+const connectionColors = {
+  'family/ecclesiastical': '#e8c050',
+  'miracle': '#e06060',
+  'translation': '#50a8d0'
+};
+
+const W = window.innerWidth;
+const H = window.innerHeight;
+
+const svg = d3.select('#graph')
+  .attr('width', W)
+  .attr('height', H);
+
+const defs = svg.append('defs');
+// Glow filter for connected nodes
+const filter = defs.append('filter').attr('id', 'glow');
+filter.append('feGaussianBlur').attr('stdDeviation', '3').attr('result', 'blur');
+const merge = filter.append('feMerge');
+merge.append('feMergeNode').attr('in', 'blur');
+merge.append('feMergeNode').attr('in', 'SourceGraphic');
+
+const g = svg.append('g');
+
+const zoom = d3.zoom()
+  .scaleExtent([0.1, 5])
+  .on('zoom', (e) => g.attr('transform', e.transform));
+
+svg.call(zoom);
+
+window.zoomIn = () => svg.transition().duration(300).call(zoom.scaleBy, 1.4);
+window.zoomOut = () => svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+window.resetView = () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity.translate(W/2, H/2).scale(0.45).translate(-W/2, -H/2));
+
+const nodeById = {};
+graphData.nodes.forEach(n => { nodeById[n.id] = n; });
+
+const links = graphData.edges.map(e => ({
+  source: e.source,
+  target: e.target,
+  description: e.description,
+  type: e.type
+}));
+
+// Count connections per node for sizing
+const connCount = {};
+graphData.edges.forEach(e => {
+  connCount[e.source] = (connCount[e.source] || 0) + 1;
+  connCount[e.target] = (connCount[e.target] || 0) + 1;
+});
+
+const getRadius = d => {
+  const c = connCount[d.id] || 0;
+  return Math.max(5, 4 + c * 2);
+};
+
+// Initialize positions randomly around center
+graphData.nodes.forEach(n => {
+  const angle = Math.random() * Math.PI * 2;
+  const r = 100 + Math.random() * 300;
+  n.x = W / 2 + Math.cos(angle) * r;
+  n.y = H / 2 + Math.sin(angle) * r;
+});
+
+// Force simulation — pure force-directed, no location grouping
+const simulation = d3.forceSimulation(graphData.nodes)
+  .force('link', d3.forceLink(links).id(d => d.id).distance(100).strength(0.5))
+  .force('charge', d3.forceManyBody().strength(-80))
+  .force('center', d3.forceCenter(W / 2, H / 2))
+  .force('collision', d3.forceCollide().radius(d => getRadius(d) + 10))
+  .force('radial', d3.forceRadial(d => {
+    // Connected nodes stay closer to center, isolated nodes drift out
+    const c = connCount[d.id] || 0;
+    return c > 0 ? 200 : 500;
+  }, W / 2, H / 2).strength(0.03))
+  .alphaDecay(0.012)
+  .velocityDecay(0.3);
+
+// Draw links
+const linkG = g.append('g');
+const linkEls = linkG.selectAll('line')
+  .data(links)
+  .join('line')
+  .attr('class', 'link')
+  .attr('stroke', d => connectionColors[d.type] || '#555')
+  .attr('stroke-width', 2.5);
+
+// Draw nodes
+const nodeG = g.append('g');
+const nodeGroups = nodeG.selectAll('g')
+  .data(graphData.nodes)
+  .join('g')
+  .attr('class', 'node-group');
+
+// Saint outer ring
+nodeGroups.filter(d => d.isSaint === 'Yes')
+  .append('circle')
+  .attr('class', 'saint-ring')
+  .attr('r', d => getRadius(d) + 4)
+  .attr('fill', 'none')
+  .attr('stroke', d => categoryColors[d.category] || '#666')
+  .attr('stroke-width', 0.8)
+  .attr('opacity', 0.3);
+
+// Main circle
+nodeGroups.append('circle')
+  .attr('class', 'node-circle')
+  .attr('r', getRadius)
+  .attr('fill', d => categoryColors[d.category] || '#666')
+  .attr('stroke', d => {
+    const c = d3.color(categoryColors[d.category] || '#666');
+    return c ? c.brighter(0.8) : '#888';
+  })
+  .attr('opacity', 0.88);
+
+// Labels always visible
+nodeGroups.append('text')
+  .attr('class', 'node-label')
+  .attr('dy', d => getRadius(d) + 12)
+  .text(d => d.name.length > 20 ? d.name.substring(0, 18) + '…' : d.name);
+
+// Drag
+const drag = d3.drag()
+  .on('start', (e, d) => {
+    if (!e.active) simulation.alphaTarget(0.15).restart();
+    d.fx = d.x; d.fy = d.y;
+  })
+  .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+  .on('end', (e, d) => {
+    if (!e.active) simulation.alphaTarget(0);
+    d.fx = null; d.fy = null;
+  });
+
+nodeGroups.call(drag);
+
+// Tooltip
+const tooltip = d3.select('#tooltip');
+
+function positionTooltip(e) {
+  let x = e.clientX + 16, y = e.clientY + 16;
+  const ttNode = document.getElementById('tooltip');
+  const tw = ttNode.offsetWidth, th = ttNode.offsetHeight;
+  if (x + tw > W - 10) x = e.clientX - tw - 16;
+  if (y + th > H - 10) y = e.clientY - th - 16;
+  tooltip.style('left', x + 'px').style('top', y + 'px');
+}
+
+// Highlight connected nodes on hover
+nodeGroups.on('mouseenter', (e, d) => {
+  const r = getRadius(d);
+  d3.select(e.currentTarget).select('.node-circle').transition().duration(150).attr('r', r + 4);
+
+  // Dim everything
+  nodeGroups.attr('opacity', 0.12);
+  linkEls.attr('opacity', 0.04);
+
+  // Highlight connected
+  const connectedIds = new Set([d.id]);
+  links.forEach(l => {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    if (sid === d.id) connectedIds.add(tid);
+    if (tid === d.id) connectedIds.add(sid);
+  });
+  nodeGroups.filter(n => connectedIds.has(n.id)).attr('opacity', 1);
+  linkEls.filter(l => {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    return sid === d.id || tid === d.id;
+  }).attr('opacity', 0.85).attr('stroke-width', 3.5);
+
+  tooltip.select('.tt-name').text(d.name);
+  tooltip.select('.tt-meta').html(
+    '<strong>Status:</strong> ' + d.status +
+    (d.isSaint === 'Yes' ? '  ✦ Saint' : '') +
+    '<br><strong>Location:</strong> ' + d.location +
+    '<br><strong>Chapters:</strong> ' + d.chapters
+  );
+  tooltip.select('.tt-desc').text(d.description);
+  tooltip.classed('visible', true);
+  positionTooltip(e);
+})
+.on('mousemove', positionTooltip)
+.on('mouseleave', (e, d) => {
+  d3.select(e.currentTarget).select('.node-circle').transition().duration(150).attr('r', getRadius(d));
+  nodeGroups.attr('opacity', 1);
+  linkEls.attr('opacity', 0.4).attr('stroke-width', 2.5);
+  tooltip.classed('visible', false);
+});
+
+linkEls.on('mouseenter', (e, d) => {
+  d3.select(e.currentTarget).attr('opacity', 0.95).attr('stroke-width', 4.5);
+  const s = typeof d.source === 'object' ? d.source : nodeById[d.source];
+  const t = typeof d.target === 'object' ? d.target : nodeById[d.target];
+  tooltip.select('.tt-name').text((s?.name || d.source) + '  ↔  ' + (t?.name || d.target));
+  tooltip.select('.tt-meta').html('<span class="tt-badge" style="background:' + (connectionColors[d.type]||'#555') + '22;color:' + (connectionColors[d.type]||'#555') + '">' + d.type + '</span>');
+  tooltip.select('.tt-desc').text(d.description);
+  tooltip.classed('visible', true);
+  positionTooltip(e);
+})
+.on('mousemove', positionTooltip)
+.on('mouseleave', (e, d) => {
+  d3.select(e.currentTarget).attr('opacity', 0.4).attr('stroke-width', 2.5);
+  tooltip.classed('visible', false);
+});
+
+// Tick
+simulation.on('tick', () => {
+  linkEls
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x)
+    .attr('y2', d => d.target.y);
+
+  nodeGroups.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+
+// Search
+document.getElementById('search').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  if (!q) {
+    nodeGroups.attr('opacity', 1);
+    linkEls.attr('opacity', 0.4);
+    return;
+  }
+  const matchIds = new Set();
+  graphData.nodes.forEach(n => {
+    if (n.name.toLowerCase().includes(q)) matchIds.add(n.id);
+  });
+  nodeGroups.attr('opacity', d => matchIds.has(d.id) ? 1 : 0.06);
+  linkEls.attr('opacity', d => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    return (matchIds.has(sid) || matchIds.has(tid)) ? 0.7 : 0.02;
+  });
+});
+
+// Initial zoom
+setTimeout(() => {
+  svg.transition().duration(800).call(
+    zoom.transform,
+    d3.zoomIdentity.translate(W * 0.1, H * 0.1).scale(0.45)
+  );
+}, 100);
+
+window.addEventListener('resize', () => {
+  const nw = window.innerWidth, nh = window.innerHeight;
+  svg.attr('width', nw).attr('height', nh);
+});
+</script>
+</body>
+</html>
